@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Ficha de Personaje · Cicatrices del Umbral</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; font-family: 'Segoe UI', 'Candara', 'Palatino', system-ui, sans-serif; }
+        body { background: #0c0b0e; background-image: radial-gradient(circle at 20% 30%, #1e1a24 0%, #040306 100%); padding: 15px 10px; display: flex; justify-content: center; color: #e4d9cd; min-height: 100vh; align-items: center; }
+        .sheet { max-width: 1100px; width: 100%; background: rgba(20, 16, 26, 0.92); backdrop-filter: blur(4px); border: 1px solid #5e4b6e; box-shadow: 0 20px 40px rgba(0,0,0,0.7), 0 0 0 1px #3a2e44 inset; border-radius: 20px; padding: 18px 14px; }
+        /* Estilos del login */
+        .login-container { max-width: 400px; margin: 0 auto; text-align: center; padding: 30px 20px; }
+        .login-container h2 { color: #dac5e8; margin-bottom: 20px; border-left: none; padding-left: 0; }
+        .login-container input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 30px; border: 1px solid #6a4e7a; background: #140f1c; color: #f2e7f9; font-size: 1rem; }
+        .login-container .btn { width: 100%; margin: 6px 0; padding: 12px; }
+        .login-container .btn-secondary { background: #3a2e44; border-color: #6f5590; }
+        .login-container .error { color: #ff6b6b; font-size: 0.9rem; margin-top: 8px; }
+        .login-container .codigo-info { font-size: 0.8rem; color: #b09cc9; margin-top: 12px; }
+        /* resto de estilos (igual que antes) */
+        h1 { font-family: 'Times New Roman', serif; font-weight: 400; letter-spacing: 2px; text-transform: uppercase; font-size: 1.8rem; color: #c9b6e0; text-shadow: 0 0 6px #7a4c9e; border-bottom: 2px solid #6a4e7a; padding-bottom: 6px; margin-bottom: 14px; display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+        h1 small { font-size: 0.9rem; letter-spacing: 1px; color: #b89bc9; }
+        h2 { font-family: 'Times New Roman', serif; font-weight: 400; font-size: 1.3rem; border-left: 5px solid #9f7eb3; padding-left: 10px; margin: 20px 0 10px 0; color: #dac5e8; text-transform: uppercase; letter-spacing: 1px; }
+        h3 { font-weight: 500; color: #cbb2de; margin: 10px 0 6px; font-size: 1rem; border-bottom: 1px dashed #5e4b6e; padding-bottom: 3px; }
+        .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
+        .grid-3col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px 12px; }
+        .stat-block { background: #1f1929; border-radius: 14px; padding: 12px 12px; border: 1px solid #463b52; box-shadow: inset 0 2px 5px #0a070e, 0 4px 8px #00000033; }
+        .dot-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; flex-wrap: wrap; }
+        .dot-label { font-weight: 600; color: #cfc1dd; min-width: 100px; font-size: 0.9rem; cursor: pointer; }
+        .dot-label:hover { text-decoration: underline; color: #dac0f0; }
+        .dot-control { display: flex; gap: 3px; }
+        .dot { font-size: 20px; cursor: pointer; color: #3d3149; text-shadow: 0 0 2px black; transition: 0.1s; user-select: none; }
+        .dot.filled { color: #b386d9; text-shadow: 0 0 10px #a55cdf; }
+        .inline-value { font-family: monospace; background: #261f30; padding: 2px 6px; border-radius: 16px; border: 1px solid #6f5590; font-size: 0.8rem; }
+        input, textarea, [contenteditable="true"] { background: #140f1c; border: 1px solid #6a4e7a; color: #f2e7f9; padding: 5px 8px; border-radius: 12px; font-size: 0.9rem; width: 100%; margin: 3px 0; }
+        textarea { min-height: 70px; resize: vertical; }
+        .health-track { display: flex; flex-direction: column; gap: 4px; }
+        .health-box { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .health-box .boxes { display: flex; gap: 3px; }
+        .health-box .box { width: 20px; height: 20px; font-size: 0.7rem; }
+        .boxes { display: flex; gap: 4px; }
+        .box { width: 24px; height: 24px; background: #1c1426; border: 2px solid #775d96; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #e1d0f0; font-size: 0.8rem; }
+        .box.marked { background: #6d3f9e; border-color: #d6b0ff; box-shadow: 0 0 6px #a974d9; }
+        .inventory-list { list-style: none; padding: 0; }
+        .inventory-list li { display: flex; gap: 6px; margin-bottom: 5px; align-items: center; }
+        .inventory-list input { flex: 1; }
+        .button-bar { display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap; }
+        .btn { background: #2f253b; border: 1px solid #8f72aa; color: #f0e4ff; padding: 8px 16px; border-radius: 40px; font-weight: 600; letter-spacing: 0.5px; cursor: pointer; box-shadow: 0 4px 0 #110c16; transition: 0.1s; font-size: 0.8rem; text-transform: uppercase; }
+        .btn-small { padding: 4px 10px; font-size: 0.75rem; }
+        .flex-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .power-card { background: #1e1727; border-radius: 14px; padding: 10px 12px; margin-bottom: 8px; border-left: 6px solid #6f4a8e; font-size: 0.9rem; }
+        .badge { background: #372c45; border-radius: 30px; padding: 2px 10px; font-size: 0.7rem; color: #dac0f0; }
+        .xp-badge { font-size: 1.2rem; font-weight: bold; color: #dbba6b; }
+        .rule-note { font-size: 0.75rem; opacity: 0.8; margin-top: 4px; font-style: italic; }
+        .bg-description { font-size: 0.75rem; color: #b09cc9; margin-left: 10px; margin-top: -4px; margin-bottom: 8px; }
+        footer { margin-top: 16px; text-align: right; opacity: 0.7; font-size: 0.8rem; }
+        .delete-skill { background: none; border: none; color: #cc6666; font-size: 16px; cursor: pointer; margin-left: 6px; padding: 0 4px; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); backdrop-filter: blur(4px); overflow: auto; }
+        .modal-content { background: #1f1929; margin: 8% auto; padding: 20px; border: 2px solid #8f72aa; border-radius: 20px; width: 90%; max-width: 550px; max-height: 80vh; overflow-y: auto; color: #e4d9cd; box-shadow: 0 20px 40px #000; position: relative; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #6a4e7a; padding-bottom: 12px; margin-bottom: 16px; }
+        .close { color: #cbb2de; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close:hover { color: #fff; }
+        .encounter-list { list-style: none; padding: 0; }
+        .encounter-item { background: #261f30; margin-bottom: 6px; border-radius: 12px; border: 1px solid #5e4b6e; }
+        .encounter-title { padding: 10px 12px; font-size: 0.9rem; cursor: pointer; font-weight: bold; color: #dac0f0; display: flex; justify-content: space-between; align-items: center; }
+        .encounter-title:hover { background: #372c45; }
+        .header-with-portrait { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+        .header-left { flex: 1; min-width: 200px; }
+        .header-portrait { width: 120px; min-width: 120px; max-width: 120px; background: #16111d; border: 1px solid #6f5590; border-radius: 16px; padding: 8px; text-align: center; cursor: pointer; }
+        .header-portrait img { width: 100%; height: 120px; object-fit: cover; border-radius: 12px; border: 2px solid #7d5fa1; background: #0b0811; display: block; }
+        .header-portrait input[type="file"] { width: 100%; overflow: hidden; font-size: 10px; margin-top: 6px; padding: 2px; cursor: pointer; }
+        .gallery-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 8px 0; }
+        .gallery-item { background: #16111d; border: 1px solid #6f5590; border-radius: 12px; padding: 4px; text-align: center; aspect-ratio: 1/1; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; }
+        .gallery-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+        .gallery-item input[type="file"] { width: 100%; font-size: 8px; padding: 2px; border: none; background: transparent; color: #b09cc9; cursor: pointer; }
+        .stability-boxes .box { width: 22px; height: 22px; }
+        .cost-details { background: #1a1422; border-radius: 14px; border: 1px solid #5a416b; padding: 8px 12px; margin: 12px 0; }
+        .cost-details summary { cursor: pointer; color: #dac0f0; font-weight: bold; font-size: 1.1rem; }
+        .cost-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 8px; }
+        .cost-col { background: #1f1929; border-radius: 12px; padding: 10px; border: 1px solid #463b52; }
+        .cost-col h4 { color: #cbb2de; border-bottom: 1px dashed #5e4b6e; padding-bottom: 4px; margin-bottom: 8px; font-size: 0.95rem; }
+        .cost-col ul { list-style: none; padding: 0; font-size: 0.8rem; line-height: 1.6; }
+        .cost-col ul li::before { content: "• "; color: #b386d9; }
+        .recovery-text { font-size: 0.8rem; line-height: 1.6; }
+        .recovery-text strong { color: #dac0f0; }
+        @media (max-width: 700px) {
+            body { padding: 8px 5px; }
+            .sheet { padding: 12px 8px; }
+            h1 { font-size: 1.5rem; }
+            h2 { font-size: 1.2rem; }
+            .grid-3col { grid-template-columns: 1fr; gap: 8px; }
+            .grid-2col { grid-template-columns: 1fr; gap: 8px; }
+            .dot-label { min-width: 90px; font-size: 0.85rem; }
+            .dot { font-size: 18px; }
+            .box { width: 22px; height: 22px; }
+            .btn { padding: 6px 12px; font-size: 0.75rem; }
+            .xp-badge { font-size: 1rem; }
+            .stat-block { padding: 10px; }
+            .power-card { font-size: 0.85rem; }
+            .header-portrait { width: 80px; min-width: 80px; max-width: 80px; }
+            .header-portrait img { height: 80px; }
+            .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+            .cost-grid { grid-template-columns: 1fr; }
+            .health-box .box { width: 18px; height: 18px; }
+        }
+        :root{ --bg-main:#0c0b0e; --bg-secondary:#1f1929; --panel:#1e1727; --border:#6f5590; --text:#e4d9cd; --accent:#b386d9; }
+        body{ background: var(--bg-main) !important; color: var(--text) !important; }
+        .sheet,.stat-block,.power-card,.modal-content{ background: var(--bg-secondary) !important; color: var(--text) !important; border-color: var(--border) !important; }
+        .btn,.inline-value,.box.marked{ background: var(--panel) !important; border-color: var(--border) !important; }
+        h1,h2,h3,.dot-label,.badge,.xp-badge{ color: var(--accent) !important; }
+        .theme-selector{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:16px; background:#16111d; padding:10px 14px; border-radius:16px; border:1px solid var(--border); }
+        .theme-btn{ width:28px; height:28px; border-radius:50%; cursor:pointer; border:2px solid #fff3; transition:.2s; }
+        .theme-btn:hover{ transform:scale(1.1); }
+        .portrait-modal .modal-content { max-width: 600px; text-align: center; }
+        .portrait-modal img { max-width: 100%; max-height: 70vh; border-radius: 12px; border: 2px solid #7d5fa1; }
+        .health-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 2px; }
+        .health-row .boxes { display: flex; gap: 3px; }
+        .health-row .box { width: 20px; height: 20px; font-size: 0.7rem; }
+        .health-row .health-label { font-size: 0.85rem; color: #e4d9cd; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+<div id="app">
+    <!-- PANTALLA DE LOGIN -->
+    <div id="loginScreen" class="sheet" style="max-width: 450px; margin: 0 auto;">
+        <div class="login-container">
+            <h2 style="border-left:none; padding-left:0;">🩸 Cicatrices del Umbral</h2>
+            <p style="color: #b09cc9; margin-bottom: 20px;">Ingresa tu código para acceder a tu ficha</p>
+            <input type="text" id="loginCode" placeholder="Código de personaje" maxlength="30" autofocus>
+            <button class="btn" id="loginBtn">🔓 Entrar</button>
+            <button class="btn btn-secondary" id="newCharBtn">✨ Crear nuevo personaje</button>
+            <div id="loginError" class="error"></div>
+            <div class="codigo-info">El código es tu contraseña. Compártelo solo con quien quieras que vea tu ficha.</div>
+        </div>
+    </div>
+
+    <!-- FICHA DEL PERSONAJE (oculta hasta login) -->
+    <div id="sheetContainer" class="sheet hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 8px;">
+            <span style="color: #b8a4cc;">🔑 Código: <span id="currentCodeDisplay" style="font-weight:bold; color:#dac0f0;"></span></span>
+            <button class="btn btn-small" id="logoutBtn">🚪 Cerrar sesión</button>
+        </div>
+
+        <div class="theme-selector">
+            <strong>🎨 Tema:</strong>
+            <div class="theme-btn" data-theme="violet" style="background:linear-gradient(135deg,#2b163d,#a855f7);"></div>
+            <div class="theme-btn" data-theme="blue" style="background:linear-gradient(135deg,#091428,#2563eb);"></div>
+            <div class="theme-btn" data-theme="dark" style="background:linear-gradient(135deg,#050505,#444);"></div>
+            <div class="theme-btn" data-theme="blood" style="background:linear-gradient(135deg,#220909,#b91c1c);"></div>
+            <div class="theme-btn" data-theme="white" style="background:linear-gradient(135deg,#e0e0e0,#ffffff);"></div>
+            <div class="theme-btn" data-theme="yellow" style="background:linear-gradient(135deg,#3d2e00,#eab308);"></div>
+            <div class="theme-btn" data-theme="green" style="background:linear-gradient(135deg,#0a2e0a,#22c55e);"></div>
+            <div class="theme-btn" data-theme="brown" style="background:linear-gradient(135deg,#2c1a0a,#a16207);"></div>
+            <div class="theme-btn" data-theme="magenta" style="background:linear-gradient(135deg,#3d0a2b,#d946ef);"></div>
+        </div>
+
+        <div class="header-with-portrait">
+            <div class="header-left">
+                <h1><span contenteditable="true" id="mainTitle">📜 NUEVO PERSONAJE</span> <small contenteditable="true" id="subTitle">EL AVENTURERO</small></h1>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-top: 4px;">
+                    <div><span style="color:#b8a4cc;">Edad:</span> <span contenteditable="true" id="ageDisplay">??</span></div>
+                    <div><span style="color:#b8a4cc;">Concepto:</span> <span contenteditable="true" id="conceptDisplay">Sin definir</span></div>
+                    <div><span style="color:#b8a4cc;" contenteditable="true">Experiencia Total:</span> <span contenteditable="true" id="xpDisplay" class="xp-badge">0 XP</span> 
+                        <button class="btn btn-small" id="openXpLogBtn">📋 Historial XP</button>
+                    </div>
+                </div>
+            </div>
+            <div class="header-portrait" id="portraitClick">
+                <img id="portraitPreview" src="" alt="Personaje">
+                <input type="file" id="portraitUpload" accept="image/*">
+            </div>
+        </div>
+
+        <div class="grid-3col" style="margin-top: 8px;">
+            <div class="stat-block">
+                <h2 style="margin:0 0 8px 0; border-left:none; padding-left:0; font-size:1.1rem;">Trasfondo · Herencia</h2>
+                <button class="btn" id="openBackgroundModalBtn">📖 Ver historia completa</button>
+            </div>
+            <div class="stat-block">
+                <h2 style="margin:0 0 8px 0; border-left:none; padding-left:0; font-size:1.1rem;">Trasfondos (5 pts)</h2>
+                <div id="backgrounds-container"></div>
+                <button class="btn btn-small" id="openBackgroundsModalBtn" style="margin-top:8px;">📖 Ver descripción completa</button>
+            </div>
+            <div class="stat-block">
+                <h2 style="margin:0 0 8px 0; border-left:none; padding-left:0; font-size:1.1rem;">Rasgo: Explorador</h2>
+                <button class="btn" id="openTraitModalBtn">📜 Ver descripción completa</button>
+            </div>
+        </div>
+
+        <h2>Atributos</h2>
+        <div class="grid-3col">
+            <div class="stat-block"><h3>🏋️ Físicos</h3><div id="attr-fisicos"></div></div>
+            <div class="stat-block"><h3>🎭 Sociales</h3><div id="attr-sociales"></div></div>
+            <div class="stat-block"><h3>🧠 Mentales</h3><div id="attr-mentales"></div></div>
+        </div>
+
+        <h2>Habilidades (13/9/5)</h2>
+        <div class="grid-3col">
+            <div class="stat-block"><h3>✨ Talentos</h3><div id="skills-talentos"></div><button class="btn btn-small add-skill-btn" data-type="talentos" style="margin-top:10px;">+ Añadir talento</button></div>
+            <div class="stat-block"><h3>🔧 Técnicas</h3><div id="skills-tecnicas"></div><button class="btn btn-small add-skill-btn" data-type="tecnicas" style="margin-top:10px;">+ Añadir técnica</button></div>
+            <div class="stat-block"><h3>📚 Conocimientos</h3><div id="skills-conocimientos"></div><button class="btn btn-small add-skill-btn" data-type="conocimientos" style="margin-top:10px;">+ Añadir conocimiento</button></div>
+        </div>
+
+        <h2>Virtudes · Voluntad · Energía · Estabilidad · Salud</h2>
+        <div class="grid-3col">
+            <div class="stat-block">
+                <h3>⚖️ Virtudes (7 pts)</h3>
+                <div id="virtues-container"></div>
+            </div>
+            <div class="stat-block">
+                <h3>FV · PE · Estabilidad</h3>
+                <div>
+                    <div><strong>FV:</strong> <input type="number" id="willpowerCurrent" min="0" max="10" style="width:60px;"> / <input type="number" id="willpowerMax" min="0" max="10" style="width:60px;"> <span class="rule-note">Coste XP:5</span></div>
+                    <div><strong>PE:</strong> <input type="number" id="energyCurrent" min="0" max="20" style="width:60px;"> / <input type="number" id="energyMax" min="0" max="20" style="width:60px;"> <span class="rule-note">Coste XP:3</span></div>
+                    <div><strong>Estabilidad:</strong> <span id="instabilityBoxes" class="boxes stability-boxes"></span> <span id="instabilityMax">máx:10</span></div>
+                </div>
+            </div>
+            <div class="stat-block">
+                <h3>❤️ Salud</h3>
+                <div id="healthTrack" class="health-track"></div>
+            </div>
+        </div>
+
+        <h2>Resonancias</h2>
+        <div class="stat-block">
+            <div id="resonancesContainer"></div>
+            <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+                <button class="btn btn-small" id="addResonanceBtn">+ Añadir Resonancia</button>
+            </div>
+        </div>
+
+        <h2>Inventario</h2>
+        <div class="stat-block"><ul class="inventory-list" id="inventoryList"></ul><button class="btn btn-small" id="addItemBtn">+ Añadir objeto</button></div>
+
+        <h2>Galería de objetos</h2>
+        <div class="stat-block">
+            <div class="gallery-grid" id="galleryGrid">
+                <div class="gallery-item" data-index="0"><img id="galleryImg0" src="" alt="Objeto 1"><input type="file" accept="image/*" class="galleryUpload" data-index="0"></div>
+                <div class="gallery-item" data-index="1"><img id="galleryImg1" src="" alt="Objeto 2"><input type="file" accept="image/*" class="galleryUpload" data-index="1"></div>
+                <div class="gallery-item" data-index="2"><img id="galleryImg2" src="" alt="Objeto 3"><input type="file" accept="image/*" class="galleryUpload" data-index="2"></div>
+                <div class="gallery-item" data-index="3"><img id="galleryImg3" src="" alt="Objeto 4"><input type="file" accept="image/*" class="galleryUpload" data-index="3"></div>
+            </div>
+        </div>
+
+        <h2>Diario de Encuentros</h2>
+        <div class="stat-block"><ul class="encounter-list" id="encounterList"></ul><button class="btn btn-small" id="addEncounterBtn">+ Nuevo encuentro</button></div>
+
+        <details class="cost-details" id="costDetails">
+            <summary>📊 Coste de experiencias, daños y recuperación</summary>
+            <div class="cost-grid">
+                <div class="cost-col">
+                    <h4>📈 Costes de XP</h4>
+                    <ul>
+                        <li>Atributos: Nivel ×5</li>
+                        <li>Habilidades: Nivel ×2 (nueva:3)</li>
+                        <li>Virtudes: Nivel ×3</li>
+                        <li>PE: 3 por punto</li>
+                        <li>FV: 5</li>
+                        <li>Trasfondos: No</li>
+                        <li><strong>Resonancias:</strong> Totales ×4 XP (nueva Resonancia da 1PE gratis), hasta máximo 16 XP por Resonancia.</li>
+                        <li>Si en Resonancia sale el 10, puede elegir entre los dominios 2 a 9, o Level up a una Resonancia ya existente.</li>
+                        <li>Level up 5XP (no da PE gratis)</li>
+                    </ul>
+                </div>
+                <div class="cost-col">
+                    <h4>🩹 Regeneración al daño</h4>
+                    <div class="recovery-text">
+                        <p><strong>ND</strong> = Nivel de daño</p>
+                        <p><strong>[[Daño Contundente]]</strong>: #4ND durante una noche de descanso o equivalente. Además, por cada punto #1PE gastado, puede recuperar #2ND adicionales.</p>
+                        <p><strong>[[Daño Letal]]</strong>: #2ND durante una noche de descanso. Además, por cada #1PE gastado, puede recuperar #1ND adicional.</p>
+                        <p><strong>[[Daño Agravado]]</strong>: recupera #1ND durante noche de descanso más el uso de #3PE y #1FV . No puede recuperar más niveles por noche.</p>
+                        <p>Para recupera niveles de [[Daño Letal]] no debe tener [[Daño Contundente]]<br>
+                        Para recupera niveles de [[Daño Agravado]] no debe tener [[Daño Contundente]] ni [[Daño Letal]]</p>
+                    </div>
+                </div>
+                <div class="cost-col">
+                    <h4>🔋 Recuperación</h4>
+                    <div class="recovery-text">
+                        <p><strong>Recuperar FV:</strong> 1 por noche, o 2 si cumplen su Rasgo</p>
+                        <p><strong>Recuperar energía:</strong> 1 + Resistencia + Inteligencia<br>
+                        Por noche bien descansada, si descansan mal, la mitad<br>
+                        Al llegar a 10 de PE: 1 + Resistencia + Inteligencia + Apariencia</p>
+                        <p><strong>Estabilidad:</strong> Todos empiezan con 5/10</p>
+                    </div>
+                </div>
+            </div>
+        </details>
+
+        <div class="button-bar">
+            <button class="btn" id="fullRestBtn">🌙 Descanso Completo</button>
+            <button class="btn" id="halfRestBtn">🛌 Medio Descanso</button>
+            <button class="btn" id="syncToCloudBtn">☁️ Sincronizar ahora</button>
+            <button class="btn" id="exportBtn">📤 Exportar personaje</button>
+            <button class="btn" id="copyStateBtn">📋 Copiar estado</button>
+        </div>
+        <footer contenteditable="true">🩸 Cicatrices del Umbral · jugador CARLOS ANDRES MACHUCA NAVARRETE</footer>
+    </div>
+</div>
+
+<!-- Modales (igual que antes) -->
+<div id="backgroundModal" class="modal"><div class="modal-content"><div class="modal-header"><h2>La Herencia de Lilium Tun</h2><span class="close" id="closeBackgroundModal">&times;</span></div><div id="fullBackgroundText" contenteditable="true" style="white-space: pre-wrap;"></div></div></div>
+<div id="backgroundsModal" class="modal"><div class="modal-content"><div class="modal-header"><h2>Descripción de Trasfondos</h2><span class="close" id="closeBackgroundsModal">&times;</span></div><div id="fullBackgroundsText" contenteditable="true" style="white-space: pre-wrap;"></div></div></div>
+<div id="traitModal" class="modal"><div class="modal-content"><div class="modal-header"><h2 contenteditable="true">Rasgo: El Explorador</h2><span class="close" id="closeTraitModal">&times;</span></div><div contenteditable="true"><p><strong>Objetivo:</strong> experimentar la mayor cantidad de vida posible.</p><p><strong>Miedo:</strong> quedar atrapado.</p><p><strong>Debilidad:</strong> deambular sin rumbo.</p><p><strong>Talento:</strong> ser fiel a sus deseos y asombro.</p></div></div></div>
+<div id="xpLogModal" class="modal"><div class="modal-content"><div class="modal-header"><h2 contenteditable="true">📋 Historial XP</h2><span class="close" id="closeXpLogModal">&times;</span></div><ul id="xpLogList" style="list-style:none;padding:0;"></ul><div style="display:flex;gap:8px;margin-top:16px;"><input type="number" step="0.1" id="xpAmountInput" min="0.1" value="1" style="width:90px;"><button class="btn" id="addXpEntryBtn">+ Añadir</button></div><p class="rule-note">Ingresa la cantidad de XP. Se pedirá el motivo.</p></div></div>
+<div id="encounterModal" class="modal"><div class="modal-content"><div class="modal-header"><h2 id="encounterModalTitle">Nuevo Encuentro</h2><span class="close" id="closeEncounterModal">&times;</span></div><input type="text" id="encounterTitleInput" placeholder="Título" style="margin-bottom:10px;"><textarea id="encounterSummaryInput" placeholder="Resumen..." rows="5"></textarea><button class="btn" id="saveEncounterBtn" style="margin-top:14px;">Guardar</button></div></div>
+<div id="portraitModal" class="modal portrait-modal"><div class="modal-content"><div class="modal-header"><h2>Retrato</h2><span class="close" id="closePortraitModal">&times;</span></div><img id="portraitModalImg" src="" alt="Retrato"></div></div>
+
+<script>
+    (function(){
+        "use strict";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAgB2EzayEn3Ipf5SSUkUdjCdqFQ79ieCY",
+            authDomain: "cicatrices-umbral-machu.firebaseapp.com",
+            projectId: "cicatrices-umbral-machu",
+            storageBucket: "cicatrices-umbral-machu.firebasestorage.app",
+            messagingSenderId: "834104504517",
+            appId: "1:834104504517:web:05c517173cc3e604d280ac"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // ========== DATOS POR DEFECTO PARA NUEVO PERSONAJE ==========
+        const DEFAULT_DATA = {
+            age: '??', concept: 'Sin definir', xp: 0,
+            background: 'Escribe aquí la historia de tu personaje...',
+            backgroundsDesc: 'Descripción de los trasfondos...',
+            attributes: {
+                fisicos: [{ name: 'Fuerza', base: 1, extra: 0 },{ name: 'Destreza', base: 1, extra: 0 },{ name: 'Resistencia', base: 1, extra: 0 }],
+                sociales: [{ name: 'Carisma', base: 1, extra: 0 },{ name: 'Manipulación', base: 1, extra: 0 },{ name: 'Apariencia', base: 1, extra: 0 }],
+                mentales: [{ name: 'Percepción', base: 1, extra: 0 },{ name: 'Inteligencia', base: 1, extra: 0 },{ name: 'Astucia', base: 1, extra: 0 }]
+            },
+            skills: { talentos: [], tecnicas: [], conocimientos: [] },
+            backgrounds: [],
+            resonances: [],
+            virtues: [{ name: 'Conciencia', value: 1 },{ name: 'Autocontrol', value: 1 },{ name: 'Coraje', value: 1 }],
+            willpower: { current: 1, max: 1 },
+            energy: { current: 1, max: 1 },
+            instability: [false,false,false,false,false,false,false,false,false,false],
+            health: [
+                { name: 'EXTRA', penalty: 0, marked: [false, false] },
+                { name: 'Magullado', penalty: 0, marked: [false, false] },
+                { name: 'Lastimado', penalty: -1, marked: [false, false] },
+                { name: 'Lesionado', penalty: -1, marked: [false, false] },
+                { name: 'Herido', penalty: -2, marked: [false, false] },
+                { name: 'Malherido', penalty: -2, marked: [false, false] },
+                { name: 'Tullido', penalty: -5, marked: [false, false] },
+                { name: 'Incapacitado', penalty: null, marked: [false, false] },
+                { name: 'ESPECIAL', penalty: null, marked: [false, false], description: '' }
+            ],
+            inventory: [],
+            xpLog: [],
+            encounters: [],
+            portrait: '',
+            gallery: ['','','','']
+        };
+
+        // ========== VARIABLES GLOBALES ==========
+        let characterData = JSON.parse(JSON.stringify(DEFAULT_DATA));
+        let currentCode = '';
+        let currentEncounterIndex = -1;
+        let syncPassword = ''; // se usará el código
+        let unsubscribe = null;
+
+        // ========== FUNCIONES DE IMAGEN (redimensionado) ==========
+        function resizeImage(file, maxWidth = 300, quality = 0.7) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        let width = img.width;
+                        let height = img.height;
+                        if (width > maxWidth) {
+                            height = Math.round(height * (maxWidth / width));
+                            width = maxWidth;
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                        resolve(dataUrl);
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // ========== NORMALIZACIÓN ==========
+        function normalizeData(data) {
+            if (!data.attributes) data.attributes = JSON.parse(JSON.stringify(DEFAULT_DATA.attributes));
+            ['fisicos','sociales','mentales'].forEach(cat => {
+                if (!data.attributes[cat] || !Array.isArray(data.attributes[cat])) {
+                    data.attributes[cat] = JSON.parse(JSON.stringify(DEFAULT_DATA.attributes[cat]));
+                }
+                data.attributes[cat].forEach(item => {
+                    if (item.base === undefined) item.base = 1;
+                    if (item.extra === undefined) item.extra = 0;
+                });
+            });
+            if (!data.skills) data.skills = JSON.parse(JSON.stringify(DEFAULT_DATA.skills));
+            ['talentos','tecnicas','conocimientos'].forEach(cat => {
+                if (!data.skills[cat] || !Array.isArray(data.skills[cat])) {
+                    data.skills[cat] = [];
+                }
+                data.skills[cat].forEach(s => { if (s.value === undefined) s.value = 1; });
+            });
+            if (!data.backgrounds || !Array.isArray(data.backgrounds)) data.backgrounds = [];
+            data.backgrounds.forEach(b => { if (b.value === undefined) b.value = 1; if (b.desc === undefined) b.desc = ''; });
+            if (!data.virtues || !Array.isArray(data.virtues)) data.virtues = [];
+            data.virtues.forEach(v => { if (v.value === undefined) v.value = 1; });
+            if (!data.resonances || !Array.isArray(data.resonances)) data.resonances = [];
+            data.resonances.forEach(r => { if (r.title === undefined) r.title = 'Resonancia'; if (r.text === undefined) r.text = ''; });
+            if (!data.willpower) data.willpower = { current: 1, max: 1 };
+            if (data.willpower.current === undefined) data.willpower.current = 1;
+            if (data.willpower.max === undefined) data.willpower.max = 1;
+            if (!data.energy) data.energy = { current: 1, max: 1 };
+            if (data.energy.current === undefined) data.energy.current = 1;
+            if (data.energy.max === undefined) data.energy.max = 1;
+            if (!data.instability || !Array.isArray(data.instability)) data.instability = [false,false,false,false,false,false,false,false,false,false];
+            while (data.instability.length < 10) data.instability.push(false);
+            while (data.instability.length > 10) data.instability.pop();
+            if (!data.health || !Array.isArray(data.health)) data.health = JSON.parse(JSON.stringify(DEFAULT_DATA.health));
+            data.health.forEach(h => {
+                if (!Array.isArray(h.marked) || h.marked.length !== 2) {
+                    h.marked = [false, false];
+                }
+                if (h.description === undefined) h.description = '';
+            });
+            if (!data.inventory || !Array.isArray(data.inventory)) data.inventory = [];
+            if (!data.xpLog || !Array.isArray(data.xpLog)) data.xpLog = [];
+            if (!data.encounters || !Array.isArray(data.encounters)) data.encounters = [];
+            if (!data.gallery || !Array.isArray(data.gallery)) data.gallery = ['','','',''];
+            while (data.gallery.length < 4) data.gallery.push('');
+            while (data.gallery.length > 4) data.gallery.pop();
+            if (data.backgroundsDesc === undefined) data.backgroundsDesc = '';
+            if (data.portrait === undefined) data.portrait = '';
+            return data;
+        }
+
+        // ========== REFERENCIA AL DOCUMENTO ==========
+        function getDocRef() {
+            if (!currentCode) return null;
+            return db.collection("characters").doc(currentCode);
+        }
+
+        // ========== CARGAR DATOS DESDE FIRESTORE ==========
+        function loadCharacter(code) {
+            if (unsubscribe) unsubscribe();
+            const docRef = db.collection("characters").doc(code);
+            unsubscribe = docRef.onSnapshot((doc) => {
+                if (doc.exists) {
+                    const cloudData = doc.data();
+                    const merged = { ...DEFAULT_DATA, ...cloudData };
+                    characterData = normalizeData(merged);
+                } else {
+                    // Si no existe, crear con datos por defecto
+                    characterData = JSON.parse(JSON.stringify(DEFAULT_DATA));
+                    docRef.set(characterData).catch(err => console.warn('Error al crear documento:', err));
+                }
+                renderAll();
+            }, (error) => {
+                console.warn('Error en snapshot:', error);
+                // Si hay error, intentar cargar local
+                renderAll();
+            });
+            currentCode = code;
+            syncPassword = code;
+            document.getElementById('currentCodeDisplay').textContent = code;
+            // Mostrar ficha y ocultar login
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('sheetContainer').classList.remove('hidden');
+        }
+
+        // ========== FUNCIONES DE RENDERIZADO (igual que antes) ==========
+        function renderSkills(containerId, skillsArray) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = '';
+            skillsArray.forEach((skill, idx) => {
+                const row = document.createElement('div'); row.className = 'dot-row';
+                const labelSpan = document.createElement('span'); labelSpan.className = 'dot-label'; labelSpan.textContent = skill.name + ':';
+                labelSpan.addEventListener('dblclick', () => {
+                    const newName = prompt('Nuevo nombre:', skill.name);
+                    if (newName && newName.trim()) { skill.name = newName.trim(); renderAll(); }
+                });
+                const dotDiv = document.createElement('div'); dotDiv.className = 'dot-control';
+                for (let i=1; i<=5; i++) {
+                    const dot = document.createElement('span');
+                    dot.className = 'dot' + (i <= skill.value ? ' filled' : ''); dot.textContent = '●';
+                    dot.dataset.level = i;
+                    dot.addEventListener('click', (e) => { skill.value = parseInt(e.target.dataset.level); renderAll(); });
+                    dotDiv.appendChild(dot);
+                }
+                const valSpan = document.createElement('span'); valSpan.className = 'inline-value'; valSpan.textContent = `${skill.value} ●`;
+                const delBtn = document.createElement('button'); delBtn.className = 'delete-skill'; delBtn.innerHTML = '🗑️';
+                delBtn.addEventListener('click', () => { skillsArray.splice(idx,1); renderAll(); });
+                row.appendChild(labelSpan); row.appendChild(dotDiv); row.appendChild(valSpan); row.appendChild(delBtn);
+                container.appendChild(row);
+            });
+        }
+
+        function addSkill(type) {
+            const newName = prompt('Nombre de la habilidad:');
+            if (!newName) return;
+            characterData.skills[type].push({ name: newName, value: 1 });
+            renderAll();
+        }
+
+        function renderDots(containerId, items) {
+            const container = document.getElementById(containerId); if (!container) return; container.innerHTML = '';
+            items.forEach((item) => {
+                const row = document.createElement('div'); row.className = 'dot-row';
+                const labelSpan = document.createElement('span'); labelSpan.className = 'dot-label'; labelSpan.textContent = item.name + ':';
+                const dotDiv = document.createElement('div'); dotDiv.className = 'dot-control';
+                const currentValue = item.value !== undefined ? item.value : (item.base + item.extra);
+                for (let i=1; i<=5; i++) {
+                    const dot = document.createElement('span'); dot.className = 'dot' + (i <= currentValue ? ' filled' : ''); dot.textContent = '●';
+                    dot.dataset.level = i;
+                    dot.addEventListener('click', (e) => {
+                        const newVal = parseInt(e.target.dataset.level);
+                        if (item.value !== undefined) item.value = newVal; else item.extra = newVal - item.base;
+                        renderAll();
+                    });
+                    dotDiv.appendChild(dot);
+                }
+                const valSpan = document.createElement('span'); valSpan.className = 'inline-value'; valSpan.textContent = `${currentValue} ●`;
+                row.appendChild(labelSpan); row.appendChild(dotDiv); row.appendChild(valSpan); container.appendChild(row);
+            });
+        }
+
+        function renderResonances() {
+            const container = document.getElementById('resonancesContainer');
+            if (!container) return;
+            container.innerHTML = '';
+            if (!characterData.resonances) characterData.resonances = [];
+            characterData.resonances.forEach((res, idx) => {
+                const card = document.createElement('div');
+                card.className = 'power-card';
+                const top = document.createElement('div');
+                top.className = 'resonance-top';
+                const editable = document.createElement('div');
+                editable.contentEditable = true;
+                editable.style.flex = '1';
+                editable.innerHTML = `<strong>${res.title}</strong><br>${res.text}`;
+                editable.addEventListener('input', () => {
+                    const html = editable.innerHTML.split('<br>');
+                    characterData.resonances[idx].title = html[0].replace(/<[^>]*>/g, '');
+                    characterData.resonances[idx].text = html.slice(1).join(' ');
+                });
+                const delBtn = document.createElement('button');
+                delBtn.className = 'delete-skill';
+                delBtn.innerHTML = '🗑️';
+                delBtn.title = 'Eliminar resonancia';
+                delBtn.addEventListener('click', () => {
+                    characterData.resonances.splice(idx,1);
+                    renderResonances();
+                });
+                top.appendChild(editable);
+                top.appendChild(delBtn);
+                card.appendChild(top);
+                container.appendChild(card);
+            });
+        }
+
+        function renderBackgrounds() {
+            const container = document.getElementById('backgrounds-container'); container.innerHTML = '';
+            characterData.backgrounds.forEach((bg, idx) => {
+                const row = document.createElement('div'); row.className = 'dot-row';
+                const labelSpan = document.createElement('span');
+                labelSpan.className = 'dot-label';
+                labelSpan.textContent = bg.name + ':';
+                labelSpan.addEventListener('dblclick', () => {
+                    const nuevo = prompt('Nuevo nombre del trasfondo:', bg.name);
+                    if (nuevo) {
+                        characterData.backgrounds[idx].name = nuevo;
+                        renderAll();
+                    }
+                });
+                const dotDiv = document.createElement('div'); dotDiv.className = 'dot-control';
+                for (let i=1; i<=5; i++) {
+                    const dot = document.createElement('span'); dot.className = 'dot' + (i <= bg.value ? ' filled' : ''); dot.textContent = '●';
+                    dot.dataset.level = i;
+                    dot.addEventListener('click', (e) => { characterData.backgrounds[idx].value = parseInt(e.target.dataset.level); renderAll(); });
+                    dotDiv.appendChild(dot);
+                }
+                const valSpan = document.createElement('span'); valSpan.className = 'inline-value'; valSpan.textContent = `${bg.value} ●`;
+                row.appendChild(labelSpan); row.appendChild(dotDiv); row.appendChild(valSpan); container.appendChild(row);
+                if (bg.desc) { const descDiv = document.createElement('div'); descDiv.className = 'bg-description'; 
+                    descDiv.contentEditable = true;
+                    descDiv.addEventListener('input', (e) => {
+                        characterData.backgrounds[idx].desc = e.target.innerText;
+                    });
+                    descDiv.textContent = bg.desc;
+                    container.appendChild(descDiv); }
+            });
+        }
+
+        function renderVirtudes() {
+            const cont = document.getElementById('virtues-container'); cont.innerHTML = '';
+            characterData.virtues.forEach((v, idx) => {
+                const row = document.createElement('div'); row.className = 'dot-row';
+                row.innerHTML = `<span class="dot-label">${v.name}:</span>`;
+                const dotDiv = document.createElement('div'); dotDiv.className = 'dot-control';
+                for (let i=1; i<=5; i++) {
+                    const dot = document.createElement('span'); dot.className = 'dot' + (i <= v.value ? ' filled' : ''); dot.textContent = '●';
+                    dot.dataset.level = i;
+                    dot.addEventListener('click', (e) => { characterData.virtues[idx].value = parseInt(e.target.dataset.level); renderAll(); });
+                    dotDiv.appendChild(dot);
+                }
+                row.appendChild(dotDiv);
+                const valSpan = document.createElement('span'); valSpan.className = 'inline-value'; valSpan.textContent = `${v.value} ●`;
+                row.appendChild(valSpan); cont.appendChild(row);
+            });
+        }
+
+        function renderInstability() {
+            const cont = document.getElementById('instabilityBoxes'); cont.innerHTML = '';
+            while (characterData.instability.length < 10) characterData.instability.push(false);
+            while (characterData.instability.length > 10) characterData.instability.pop();
+            characterData.instability.forEach((mark, i) => {
+                const box = document.createElement('div'); box.className = 'box' + (mark ? ' marked' : ''); box.textContent = mark ? 'X' : '';
+                box.addEventListener('click', () => { characterData.instability[i] = !characterData.instability[i]; renderInstability(); });
+                cont.appendChild(box);
+            });
+            document.getElementById('instabilityMax').textContent = 'máx:10';
+        }
+
+        function renderHealth() {
+            const track = document.getElementById('healthTrack'); track.innerHTML = '';
+            characterData.health.forEach((level, idx) => {
+                const row = document.createElement('div'); row.className = 'health-row';
+                const boxesDiv = document.createElement('div'); boxesDiv.className = 'boxes';
+                for (let b=0; b<2; b++) {
+                    const box = document.createElement('div'); 
+                    box.className = 'box' + (level.marked && level.marked[b] ? ' marked' : ''); 
+                    box.textContent = (level.marked && level.marked[b]) ? 'X' : '';
+                    box.addEventListener('click', () => {
+                        if (!level.marked) level.marked = [false, false];
+                        level.marked[b] = !level.marked[b];
+                        renderHealth();
+                    });
+                    boxesDiv.appendChild(box);
+                }
+                row.appendChild(boxesDiv);
+
+                const label = document.createElement('span'); 
+                label.className = 'health-label';
+                let penaltyStr = level.penalty !== null ? ` (${level.penalty})` : ' (—)';
+                if (level.name === 'ESPECIAL') {
+                    const input = document.createElement('input'); 
+                    input.type = 'text'; 
+                    input.placeholder = 'Descripción'; 
+                    input.value = level.description || '';
+                    input.style.width = '120px';
+                    input.addEventListener('input', (e) => { characterData.health[idx].description = e.target.value; });
+                    row.appendChild(label);
+                    row.appendChild(input);
+                } else {
+                    label.textContent = `${level.name}${penaltyStr}`;
+                    row.appendChild(label);
+                }
+                track.appendChild(row);
+            });
+        }
+
+        function renderInventory() {
+            const list = document.getElementById('inventoryList'); list.innerHTML = '';
+            characterData.inventory.forEach((item, i) => {
+                const li = document.createElement('li');
+                const inp = document.createElement('input'); inp.type = 'text'; inp.value = item;
+                inp.addEventListener('input', (e) => { characterData.inventory[i] = e.target.value; });
+                const delBtn = document.createElement('button'); delBtn.textContent = '✕'; delBtn.style.background = '#3d2a4a'; delBtn.style.border = 'none'; delBtn.style.color = 'white'; delBtn.style.borderRadius = '20px'; delBtn.style.cursor = 'pointer'; delBtn.style.marginLeft = '6px';
+                delBtn.addEventListener('click', () => { characterData.inventory.splice(i,1); renderInventory(); });
+                li.appendChild(inp); li.appendChild(delBtn); list.appendChild(li);
+            });
+        }
+
+        function renderGallery() {
+            if (!characterData.gallery) characterData.gallery = ['','','',''];
+            for (let i=0; i<4; i++) {
+                const img = document.getElementById('galleryImg'+i);
+                if (img) {
+                    img.src = characterData.gallery[i] || '';
+                }
+            }
+        }
+
+        function renderEncounters() {
+            const list = document.getElementById('encounterList'); list.innerHTML = '';
+            if (!characterData.encounters) characterData.encounters = [];
+            characterData.encounters.forEach((enc, i) => {
+                const item = document.createElement('li'); item.className = 'encounter-item';
+                const titleDiv = document.createElement('div'); titleDiv.className = 'encounter-title';
+                titleDiv.innerHTML = `<span>📌 ${enc.title}</span>`;
+                const delBtn = document.createElement('button'); delBtn.className = 'delete-skill'; delBtn.innerHTML = '🗑️';
+                delBtn.addEventListener('click', (e) => { e.stopPropagation(); characterData.encounters.splice(i,1); renderEncounters(); });
+                titleDiv.appendChild(delBtn);
+                titleDiv.addEventListener('click', () => {
+                    currentEncounterIndex = i;
+                    document.getElementById('encounterModalTitle').textContent = enc.title;
+                    document.getElementById('encounterTitleInput').value = enc.title;
+                    document.getElementById('encounterSummaryInput').value = enc.summary;
+                    document.getElementById('encounterModal').style.display = 'block';
+                });
+                item.appendChild(titleDiv); list.appendChild(item);
+            });
+        }
+
+        function syncEditableFields() {
+            document.getElementById('ageDisplay').innerText = characterData.age;
+            document.getElementById('conceptDisplay').innerText = characterData.concept;
+            document.getElementById('xpDisplay').innerText = characterData.xp + ' XP';
+            document.getElementById('fullBackgroundText').textContent = characterData.background;
+            document.getElementById('fullBackgroundsText').textContent = characterData.backgroundsDesc || '';
+            document.getElementById('willpowerCurrent').value = characterData.willpower.current;
+            document.getElementById('willpowerMax').value = characterData.willpower.max;
+            document.getElementById('energyCurrent').value = characterData.energy.current;
+            document.getElementById('energyMax').value = characterData.energy.max;
+            const portrait = document.getElementById('portraitPreview');
+            if (portrait && characterData.portrait) portrait.src = characterData.portrait;
+            renderGallery();
+            const xpList = document.getElementById('xpLogList');
+            if (xpList) {
+                xpList.innerHTML = '';
+                if (characterData.xpLog) {
+                    characterData.xpLog.forEach(entry => {
+                        const li = document.createElement('li'); li.style.marginBottom = '6px'; li.style.borderBottom = '1px solid #3a2e44'; li.style.padding = '6px';
+                        li.innerHTML = `<div contenteditable="true" class="xp-entry-edit"><strong>+${entry.amount} XP</strong> - ${entry.reason}</div><small>${new Date(entry.date).toLocaleString()}</small><button class="delete-skill" style="float:right;">🗑️</button>`;
+                        li.querySelector('.xp-entry-edit').addEventListener('input', (e)=>{
+                            characterData.xpLog[Array.from(xpList.children).indexOf(li)].reason = e.target.innerText;
+                        });
+                        li.querySelector('.delete-skill').addEventListener('click', ()=>{
+                            const index = Array.from(xpList.children).indexOf(li);
+                            characterData.xpLog.splice(index,1);
+                            renderAll();
+                        });
+                        xpList.appendChild(li);
+                    });
+                }
+            }
+        }
+
+        function collectFromEditable() {
+            characterData.age = document.getElementById('ageDisplay').innerText;
+            characterData.concept = document.getElementById('conceptDisplay').innerText;
+            characterData.xp = parseFloat(document.getElementById('xpDisplay').innerText.replace(',', '.')) || 0;
+            characterData.willpower.current = parseInt(document.getElementById('willpowerCurrent').value) || 0;
+            characterData.willpower.max = parseInt(document.getElementById('willpowerMax').value) || 0;
+            characterData.energy.current = parseInt(document.getElementById('energyCurrent').value) || 0;
+            characterData.energy.max = parseInt(document.getElementById('energyMax').value) || 0;
+            const bgText = document.getElementById('fullBackgroundText');
+            if (bgText) characterData.background = bgText.innerText;
+            const bgDesc = document.getElementById('fullBackgroundsText');
+            if (bgDesc) characterData.backgroundsDesc = bgDesc.innerText;
+        }
+
+        // ========== TEMAS ==========
+        const THEMES = {
+            violet: { '--bg-main':'#0d0714','--bg-secondary':'#1f1929','--panel':'#2d1f3f','--border':'#8b5cf6','--text':'#f3e8ff','--accent':'#c084fc' },
+            blue: { '--bg-main':'#07111f','--bg-secondary':'#132033','--panel':'#1d3557','--border':'#3b82f6','--text':'#dbeafe','--accent':'#60a5fa' },
+            dark: { '--bg-main':'#050505','--bg-secondary':'#151515','--panel':'#232323','--border':'#666','--text':'#f1f1f1','--accent':'#ffffff' },
+            blood: { '--bg-main':'#140707','--bg-secondary':'#2a1010','--panel':'#3b1616','--border':'#dc2626','--text':'#ffe4e6','--accent':'#f87171' },
+            white: { '--bg-main':'#f0f0f0','--bg-secondary':'#e8e0f0','--panel':'#d5cce0','--border':'#999','--text':'#222','--accent':'#6a4e7a' },
+            yellow: { '--bg-main':'#2d2a0a','--bg-secondary':'#3d3a1a','--panel':'#4d4a2a','--border':'#eab308','--text':'#fef9c3','--accent':'#facc15' },
+            green: { '--bg-main':'#0a2a0a','--bg-secondary':'#1a3a1a','--panel':'#2a4a2a','--border':'#22c55e','--text':'#dcfce7','--accent':'#4ade80' },
+            brown: { '--bg-main':'#2a1a0a','--bg-secondary':'#3d2a1a','--panel':'#4d3a2a','--border':'#a16207','--text':'#fef3c7','--accent':'#d97706' },
+            magenta: { '--bg-main':'#2a0a2a','--bg-secondary':'#3d1a3d','--panel':'#4d2a4d','--border':'#d946ef','--text':'#fae8ff','--accent':'#e879f9' }
+        };
+
+        function applyTheme(themeName){
+            const theme = THEMES[themeName];
+            if(!theme) return;
+            Object.entries(theme).forEach(([key,val])=>{
+                document.documentElement.style.setProperty(key,val);
+            });
+            localStorage.setItem('sheetTheme', themeName);
+        }
+
+        // ========== RENDER ALL ==========
+        function renderAll() {
+            renderDots('attr-fisicos', characterData.attributes.fisicos);
+            renderDots('attr-sociales', characterData.attributes.sociales);
+            renderDots('attr-mentales', characterData.attributes.mentales);
+            renderSkills('skills-talentos', characterData.skills.talentos);
+            renderSkills('skills-tecnicas', characterData.skills.tecnicas);
+            renderSkills('skills-conocimientos', characterData.skills.conocimientos);
+            renderBackgrounds(); renderResonances(); renderVirtudes(); renderInstability(); renderHealth(); renderInventory(); renderEncounters();
+            renderGallery();
+            syncEditableFields();
+        }
+
+        // ========== SISTEMA DE DESCANSO ==========
+        function getDamageCounts() {
+            let contundente = 0, letal = 0, agravado = 0;
+            characterData.health.forEach(h => {
+                const marked = h.marked || [false, false];
+                const alguna = marked.some(m => m);
+                if (!alguna) return;
+                const name = h.name;
+                if (['EXTRA','Magullado','Lastimado'].includes(name)) contundente++;
+                else if (['Lesionado','Herido','Malherido'].includes(name)) letal++;
+                else if (['Tullido','Incapacitado'].includes(name)) agravado++;
+            });
+            return { contundente, letal, agravado };
+        }
+
+        function healDamage(type, amount) {
+            let levels = [];
+            if (type === 'contundente') levels = ['Lastimado','Magullado','EXTRA'];
+            if (type === 'letal') levels = ['Malherido','Herido','Lesionado'];
+            if (type === 'agravado') levels = ['Incapacitado','Tullido'];
+            for (let i = 0; i < levels.length && amount > 0; i++) {
+                const level = characterData.health.find(h => h.name === levels[i]);
+                if (level && level.marked && level.marked.some(m => m)) {
+                    level.marked = [false, false];
+                    amount--;
+                }
+            }
+        }
+
+        function realizarDescanso(tipo) {
+            collectFromEditable();
+            let mensaje = '';
+
+            if (tipo === 'completo') {
+                characterData.energy.current = characterData.energy.max;
+                mensaje += '⚡ Energía restaurada completamente.\n';
+            } else {
+                const recupera = Math.ceil(characterData.energy.max / 2);
+                characterData.energy.current = Math.min(characterData.energy.current + recupera, characterData.energy.max);
+                mensaje += `⚡ Recuperaste ${recupera} PE.\n`;
+            }
+
+            let fvRecuperada = 0;
+            if (tipo === 'completo') {
+                const cumplioRasgo = confirm('¿Cumplió su Rasgo de Personalidad durante el día?\n\nAceptar = Sí (+2 FV)\nCancelar = No (+1 FV)');
+                fvRecuperada = cumplioRasgo ? 2 : 1;
+            }
+            characterData.willpower.current = Math.min(characterData.willpower.current + fvRecuperada, characterData.willpower.max);
+            if (fvRecuperada > 0) mensaje += `🧠 Recuperaste ${fvRecuperada} FV.\n`;
+
+            const daños = getDamageCounts();
+
+            if (daños.contundente > 0) {
+                let cura = tipo === 'completo' ? 4 : 2;
+                const gastarPE = confirm('¿Deseas gastar PE para curar más daño contundente?\n\nCada 1 PE cura +2 ND');
+                if (gastarPE) {
+                    const pe = parseInt(prompt('¿Cuántos PE gastarás?', '0')) || 0;
+                    if (characterData.energy.current >= pe) {
+                        characterData.energy.current -= pe;
+                        cura += pe * 2;
+                    } else alert('No tienes suficiente PE.');
+                }
+                healDamage('contundente', cura);
+                mensaje += `🩹 Curación contundente aplicada (${cura} ND).\n`;
+            } else if (daños.letal > 0) {
+                let cura = tipo === 'completo' ? 2 : 1;
+                const gastarPE = confirm('¿Deseas gastar PE para curar más daño letal?\n\nCada 1 PE cura +1 ND');
+                if (gastarPE) {
+                    const pe = parseInt(prompt('¿Cuántos PE gastarás?', '0')) || 0;
+                    if (characterData.energy.current >= pe) {
+                        characterData.energy.current -= pe;
+                        cura += pe;
+                    } else alert('No tienes suficiente PE.');
+                }
+                healDamage('letal', cura);
+                mensaje += `🩹 Curación letal aplicada (${cura} ND).\n`;
+            } else if (daños.agravado > 0) {
+                if (tipo === 'completo') {
+                    const usarRecursos = confirm('Curar 1 ND agravado requiere 3 PE y 1 FV.\n\n¿Deseas hacerlo?');
+                    if (usarRecursos) {
+                        if (characterData.energy.current >= 3 && characterData.willpower.current >= 1) {
+                            characterData.energy.current -= 3;
+                            characterData.willpower.current -= 1;
+                            healDamage('agravado', 1);
+                            mensaje += '🩹 Recuperaste 1 ND agravado.\n';
+                        } else mensaje += '❌ No tienes suficientes recursos para curar daño agravado.\n';
+                    }
+                }
+            }
+
+            renderAll();
+            alert(`🌙 ${tipo === 'completo' ? 'Descanso Completo' : 'Medio Descanso'} realizado.\n\n${mensaje}`);
+        }
+
+        // ========== EXPORTAR Y COPIAR ESTADO ==========
+        function exportCharacter() {
+            collectFromEditable();
+            let lines = [];
+            lines.push('=== FICHA DE PERSONAJE ===');
+            lines.push(`Nombre: ${document.getElementById('mainTitle').innerText}`);
+            lines.push(`Subtítulo: ${document.getElementById('subTitle').innerText}`);
+            lines.push(`Edad: ${characterData.age}`);
+            lines.push(`Concepto: ${characterData.concept}`);
+            lines.push(`Experiencia: ${characterData.xp} XP`);
+            lines.push('');
+            lines.push('--- ATRIBUTOS ---');
+            ['fisicos','sociales','mentales'].forEach(cat => {
+                lines.push(`  ${cat.toUpperCase()}:`);
+                characterData.attributes[cat].forEach(a => {
+                    const val = a.value !== undefined ? a.value : (a.base + a.extra);
+                    lines.push(`    ${a.name}: ${val}`);
+                });
+            });
+            lines.push('');
+            lines.push('--- HABILIDADES ---');
+            ['talentos','tecnicas','conocimientos'].forEach(cat => {
+                lines.push(`  ${cat.toUpperCase()}:`);
+                characterData.skills[cat].forEach(s => {
+                    lines.push(`    ${s.name}: ${s.value}`);
+                });
+            });
+            lines.push('');
+            lines.push('--- TRASFONDOS ---');
+            characterData.backgrounds.forEach(b => {
+                lines.push(`  ${b.name}: ${b.value} - ${b.desc || ''}`);
+            });
+            lines.push('');
+            lines.push('--- VIRTUDES ---');
+            characterData.virtues.forEach(v => {
+                lines.push(`  ${v.name}: ${v.value}`);
+            });
+            lines.push('');
+            lines.push(`FV: ${characterData.willpower.current}/${characterData.willpower.max}`);
+            lines.push(`PE: ${characterData.energy.current}/${characterData.energy.max}`);
+            lines.push('ESTABILIDAD: ' + characterData.instability.map(m => m ? 'X' : '·').join(' '));
+            lines.push('');
+            lines.push('--- SALUD ---');
+            characterData.health.forEach(h => {
+                const marks = h.marked ? h.marked.map(m => m ? 'X' : '·').join('') : '··';
+                const pen = h.penalty !== null ? `(${h.penalty})` : '(—)';
+                lines.push(`  ${h.name} ${pen}: ${marks}`);
+            });
+            lines.push('');
+            lines.push('--- RESONANCIAS ---');
+            characterData.resonances.forEach(r => {
+                lines.push(`  ${r.title}: ${r.text}`);
+            });
+            lines.push('');
+            lines.push('--- INVENTARIO ---');
+            characterData.inventory.forEach(item => lines.push(`  - ${item}`));
+            lines.push('');
+            lines.push('--- ENCUENTROS ---');
+            characterData.encounters.forEach(e => {
+                lines.push(`  ${e.title}: ${e.summary || ''}`);
+            });
+            lines.push('');
+            lines.push('--- HISTORIAL XP ---');
+            characterData.xpLog.forEach(x => {
+                lines.push(`  +${x.amount} XP: ${x.reason} (${new Date(x.date).toLocaleDateString()})`);
+            });
+
+            const content = lines.join('\n');
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `personaje_${currentCode}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function copyState() {
+            collectFromEditable();
+            const nombre = document.getElementById('mainTitle').innerText;
+            // Salud: mostrar niveles marcados
+            const saludStr = characterData.health
+                .filter(h => h.marked && h.marked.some(m => m))
+                .map(h => h.name)
+                .join(', ') || 'Ninguno';
+            const estado = [
+                `Nombre: ${nombre}`,
+                `Salud: ${saludStr}`,
+                `FV: ${characterData.willpower.current}/${characterData.willpower.max}`,
+                `PE: ${characterData.energy.current}/${characterData.energy.max}`,
+                `Estabilidad: ${characterData.instability.filter(m => m).length}/10`,
+                `Experiencia: ${characterData.xp} XP`
+            ].join('\n');
+            navigator.clipboard.writeText(estado).then(() => {
+                alert('✅ Estado copiado al portapapeles.');
+            }).catch(() => {
+                alert('❌ No se pudo copiar. Copia manualmente:\n\n' + estado);
+            });
+        }
+
+        // ========== SINCRONIZAR ==========
+        function syncToFirebase() {
+            if (!currentCode) { alert('No hay código de personaje'); return; }
+            const password = prompt('🔐 Ingresa la contraseña para sincronizar (código del personaje):');
+            if (password !== currentCode) {
+                alert('❌ Contraseña incorrecta.');
+                return;
+            }
+            collectFromEditable();
+            const docRef = getDocRef();
+            if (!docRef) return;
+            docRef.set(characterData).then(() => alert('✅ Datos sincronizados')).catch(err => alert('❌ Error: '+err));
+        }
+
+        // ========== LOGIN / LOGOUT ==========
+        function login(code) {
+            const trimmed = code.trim();
+            if (!trimmed) { document.getElementById('loginError').textContent = 'Ingresa un código.'; return; }
+            // Verificar si existe en Firebase (opcional, pero lo creamos al cargar)
+            document.getElementById('loginError').textContent = '';
+            loadCharacter(trimmed);
+        }
+
+        function logout() {
+            if (unsubscribe) unsubscribe();
+            unsubscribe = null;
+            currentCode = '';
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('sheetContainer').classList.add('hidden');
+            // Limpiar campos de login
+            document.getElementById('loginCode').value = '';
+            document.getElementById('loginError').textContent = '';
+            characterData = JSON.parse(JSON.stringify(DEFAULT_DATA));
+        }
+
+        function createNew() {
+            const code = prompt('Crea un código para tu nuevo personaje (alfanumérico, sin espacios):');
+            if (!code) return;
+            const trimmed = code.trim();
+            if (!trimmed) { alert('Código inválido.'); return; }
+            // Verificar que no exista ya (opcional)
+            const docRef = db.collection("characters").doc(trimmed);
+            docRef.get().then((doc) => {
+                if (doc.exists) {
+                    alert('Este código ya está en uso. Elige otro.');
+                } else {
+                    // Crear documento con datos por defecto
+                    docRef.set(DEFAULT_DATA).then(() => {
+                        login(trimmed);
+                    }).catch(err => alert('Error al crear: '+err));
+                }
+            }).catch(err => alert('Error al verificar: '+err));
+        }
+
+        // ========== INICIALIZACIÓN ==========
+        window.addEventListener('DOMContentLoaded', () => {
+            // Temas
+            document.querySelectorAll('.theme-btn').forEach(btn=>{
+                btn.addEventListener('click', ()=>{
+                    applyTheme(btn.dataset.theme);
+                });
+            });
+            const savedTheme = localStorage.getItem('sheetTheme') || 'violet';
+            applyTheme(savedTheme);
+
+            // Eventos login
+            document.getElementById('loginBtn').addEventListener('click', () => {
+                const code = document.getElementById('loginCode').value;
+                login(code);
+            });
+            document.getElementById('loginCode').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    document.getElementById('loginBtn').click();
+                }
+            });
+            document.getElementById('newCharBtn').addEventListener('click', createNew);
+
+            // Eventos de la ficha
+            document.getElementById('logoutBtn').addEventListener('click', logout);
+            document.getElementById('syncToCloudBtn').addEventListener('click', syncToFirebase);
+            document.getElementById('fullRestBtn').addEventListener('click', () => realizarDescanso('completo'));
+            document.getElementById('halfRestBtn').addEventListener('click', () => realizarDescanso('medio'));
+            document.getElementById('exportBtn').addEventListener('click', exportCharacter);
+            document.getElementById('copyStateBtn').addEventListener('click', copyState);
+
+            document.getElementById('addResonanceBtn').addEventListener('click', () => {
+                characterData.resonances.push({ title: 'Nueva Resonancia', text: 'Describe aquí la resonancia...' });
+                renderResonances();
+            });
+            document.getElementById('addItemBtn').addEventListener('click', () => { characterData.inventory.push('Nuevo objeto'); renderInventory(); });
+            document.getElementById('addEncounterBtn').addEventListener('click', () => {
+                currentEncounterIndex = -1;
+                document.getElementById('encounterModalTitle').textContent = 'Nuevo Encuentro';
+                document.getElementById('encounterTitleInput').value = '';
+                document.getElementById('encounterSummaryInput').value = '';
+                document.getElementById('encounterModal').style.display = 'block';
+            });
+            document.querySelectorAll('.add-skill-btn').forEach(btn => btn.addEventListener('click', () => addSkill(btn.dataset.type)));
+
+            // Modales
+            document.getElementById('openBackgroundModalBtn').addEventListener('click', () => {
+                document.getElementById('fullBackgroundText').textContent = characterData.background;
+                document.getElementById('backgroundModal').style.display = 'block';
+            });
+            document.getElementById('openBackgroundsModalBtn').addEventListener('click', () => {
+                document.getElementById('fullBackgroundsText').textContent = characterData.backgroundsDesc || '';
+                document.getElementById('backgroundsModal').style.display = 'block';
+            });
+            document.getElementById('openTraitModalBtn').addEventListener('click', () => document.getElementById('traitModal').style.display = 'block');
+            document.getElementById('openXpLogBtn').addEventListener('click', () => document.getElementById('xpLogModal').style.display = 'block');
+
+            const closers = ['closeBackgroundModal','closeBackgroundsModal','closeTraitModal','closeXpLogModal','closeEncounterModal','closePortraitModal'];
+            closers.forEach(id => {
+                document.getElementById(id).addEventListener('click', () => {
+                    document.getElementById(id.replace('close','').replace('Modal','')+'Modal').style.display = 'none';
+                });
+            });
+            window.addEventListener('click', (e) => { if (e.target.classList.contains('modal')) e.target.style.display = 'none'; });
+
+            document.getElementById('addXpEntryBtn').addEventListener('click', () => {
+                const amount = parseFloat(document.getElementById('xpAmountInput').value.replace(',', '.')) || 1;
+                const reason = prompt('Motivo de la experiencia:');
+                if (reason) {
+                    if (!characterData.xpLog) characterData.xpLog = [];
+                    characterData.xpLog.push({ reason, amount, date: new Date().toISOString() });
+                    characterData.xp = (characterData.xp || 0) + amount;
+                    renderAll();
+                }
+            });
+
+            document.getElementById('saveEncounterBtn').addEventListener('click', () => {
+                const title = document.getElementById('encounterTitleInput').value;
+                const summary = document.getElementById('encounterSummaryInput').value;
+                if (!title) return alert('Título obligatorio');
+                if (currentEncounterIndex >= 0) characterData.encounters[currentEncounterIndex] = { title, summary };
+                else characterData.encounters.push({ title, summary });
+                renderEncounters();
+                document.getElementById('encounterModal').style.display = 'none';
+            });
+
+            // Imagen de retrato
+            const portraitUpload = document.getElementById('portraitUpload');
+            portraitUpload.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                try {
+                    const dataUrl = await resizeImage(file, 300, 0.7);
+                    characterData.portrait = dataUrl;
+                    document.getElementById('portraitPreview').src = dataUrl;
+                } catch (err) {
+                    alert('Error al procesar la imagen: ' + err.message);
+                }
+            });
+            document.getElementById('portraitClick').addEventListener('click', function(e) {
+                if (e.target.tagName === 'INPUT') return;
+                const img = document.getElementById('portraitPreview');
+                if (img.src) {
+                    document.getElementById('portraitModalImg').src = img.src;
+                    document.getElementById('portraitModal').style.display = 'block';
+                }
+            });
+
+            // Galería
+            document.querySelectorAll('.galleryUpload').forEach(input => {
+                input.addEventListener('change', async function(e) {
+                    const idx = parseInt(this.dataset.index);
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    try {
+                        const dataUrl = await resizeImage(file, 300, 0.7);
+                        characterData.gallery[idx] = dataUrl;
+                        document.getElementById('galleryImg'+idx).src = dataUrl;
+                    } catch (err) {
+                        alert('Error al procesar la imagen: ' + err.message);
+                    }
+                });
+            });
+
+            // Verificar si hay sesión guardada (para mantener login al recargar)
+            // No guardamos sesión para evitar que otro use el mismo navegador.
+            // Siempre mostramos login.
+        });
+    })();
+</script>
+</body>
+</html>
