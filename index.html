@@ -118,6 +118,10 @@
         .health-row .health-label { font-size: 0.85rem; color: #e4d9cd; }
         .hidden { display: none !important; }
         .btn-danger { background: #6b2e2e; border-color: #b33; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+        .modal-footer .btn { padding: 6px 18px; }
+        .modal-footer .btn-secondary { background: #3a2e44; }
+        .modal-footer .btn-primary { background: #4a3a5a; }
     </style>
 </head>
 <body>
@@ -165,8 +169,11 @@
                 <div style="display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-top: 4px;">
                     <div><span style="color:#b8a4cc;">Edad:</span> <span contenteditable="true" id="ageDisplay">??</span></div>
                     <div><span style="color:#b8a4cc;">Concepto:</span> <span contenteditable="true" id="conceptDisplay">Sin definir</span></div>
-                    <div><span style="color:#b8a4cc;" contenteditable="true">Experiencia Total:</span> <span contenteditable="true" id="xpDisplay" class="xp-badge">0 XP</span> 
+                    <div style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap;">
+                        <span style="color:#b8a4cc;" contenteditable="true">Experiencia Total:</span>
+                        <span contenteditable="true" id="xpDisplay" class="xp-badge">0 XP</span>
                         <button class="btn btn-small" id="openXpLogBtn">📋 Historial XP</button>
+                        <button class="btn btn-small" id="diceBtn" style="background:#3a2e44;">🎲 Tirar dados</button>
                     </div>
                 </div>
             </div>
@@ -187,8 +194,8 @@
                 <button class="btn btn-small" id="openBackgroundsModalBtn" style="margin-top:8px;">📖 Ver descripción completa</button>
             </div>
             <div class="stat-block">
-                <h2 style="margin:0 0 8px 0; border-left:none; padding-left:0; font-size:1.1rem;">Rasgo: Explorador</h2>
-                <button class="btn" id="openTraitModalBtn">📜 Ver descripción completa</button>
+                <h2 style="margin:0 0 8px 0; border-left:none; padding-left:0; font-size:1.1rem;">Rasgo</h2>
+                <button class="btn" id="openTraitModalBtn">📜 Ver/editar rasgo</button>
             </div>
         </div>
 
@@ -302,10 +309,44 @@
     </div>
 </div>
 
-<!-- Modales -->
-<div id="backgroundModal" class="modal"><div class="modal-content"><div class="modal-header"><h2>La Herencia de Lilium Tun</h2><span class="close" id="closeBackgroundModal">&times;</span></div><div id="fullBackgroundText" contenteditable="true" style="white-space: pre-wrap;"></div></div></div>
-<div id="backgroundsModal" class="modal"><div class="modal-content"><div class="modal-header"><h2>Descripción de Trasfondos</h2><span class="close" id="closeBackgroundsModal">&times;</span></div><div id="fullBackgroundsText" contenteditable="true" style="white-space: pre-wrap;"></div></div></div>
-<div id="traitModal" class="modal"><div class="modal-content"><div class="modal-header"><h2 contenteditable="true">Rasgo: El Explorador</h2><span class="close" id="closeTraitModal">&times;</span></div><div contenteditable="true"><p><strong>Objetivo:</strong> experimentar la mayor cantidad de vida posible.</p><p><strong>Miedo:</strong> quedar atrapado.</p><p><strong>Debilidad:</strong> deambular sin rumbo.</p><p><strong>Talento:</strong> ser fiel a sus deseos y asombro.</p></div></div></div>
+<!-- MODALES CON BOTÓN GUARDAR -->
+<!-- Modal Historia -->
+<div id="backgroundModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h2>La Herencia de Lilium Tun</h2><span class="close" id="closeBackgroundModal">&times;</span></div>
+        <div id="fullBackgroundText" contenteditable="true" style="white-space: pre-wrap; min-height: 150px;"></div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="cancelBackgroundModalBtn">Cancelar</button>
+            <button class="btn btn-primary" id="saveBackgroundModalBtn">💾 Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Trasfondos -->
+<div id="backgroundsModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h2>Descripción de Trasfondos</h2><span class="close" id="closeBackgroundsModal">&times;</span></div>
+        <div id="fullBackgroundsText" contenteditable="true" style="white-space: pre-wrap; min-height: 150px;"></div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="cancelBackgroundsModalBtn">Cancelar</button>
+            <button class="btn btn-primary" id="saveBackgroundsModalBtn">💾 Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Rasgo -->
+<div id="traitModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h2>Rasgo de Personalidad</h2><span class="close" id="closeTraitModal">&times;</span></div>
+        <div id="fullTraitText" contenteditable="true" style="white-space: pre-wrap; min-height: 150px;"></div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="cancelTraitModalBtn">Cancelar</button>
+            <button class="btn btn-primary" id="saveTraitModalBtn">💾 Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Resto de modales (XP, Encuentros, Retrato) sin cambios -->
 <div id="xpLogModal" class="modal"><div class="modal-content"><div class="modal-header"><h2 contenteditable="true">📋 Historial XP</h2><span class="close" id="closeXpLogModal">&times;</span></div><ul id="xpLogList" style="list-style:none;padding:0;"></ul><div style="display:flex;gap:8px;margin-top:16px;"><input type="number" step="0.1" id="xpAmountInput" min="0.1" value="1" style="width:90px;"><button class="btn" id="addXpEntryBtn">+ Añadir</button></div><p class="rule-note">Ingresa la cantidad de XP. Se pedirá el motivo.</p></div></div>
 <div id="encounterModal" class="modal"><div class="modal-content"><div class="modal-header"><h2 id="encounterModalTitle">Nuevo Encuentro</h2><span class="close" id="closeEncounterModal">&times;</span></div><input type="text" id="encounterTitleInput" placeholder="Título" style="margin-bottom:10px;"><textarea id="encounterSummaryInput" placeholder="Resumen..." rows="5"></textarea><button class="btn" id="saveEncounterBtn" style="margin-top:14px;">Guardar</button></div></div>
 <div id="portraitModal" class="modal portrait-modal"><div class="modal-content"><div class="modal-header"><h2>Retrato</h2><span class="close" id="closePortraitModal">&times;</span></div><img id="portraitModalImg" src="" alt="Retrato"></div></div>
@@ -330,6 +371,8 @@
             age: '??', concept: 'Sin definir', xp: 0,
             background: 'Escribe aquí la historia de tu personaje...',
             backgroundsDesc: 'Descripción de los trasfondos...',
+            trait: '',
+            theme: 'violet',
             attributes: {
                 fisicos: [{ name: 'Fuerza', base: 1, extra: 0 },{ name: 'Destreza', base: 1, extra: 0 },{ name: 'Resistencia', base: 1, extra: 0 }],
                 sociales: [{ name: 'Carisma', base: 1, extra: 0 },{ name: 'Manipulación', base: 1, extra: 0 },{ name: 'Apariencia', base: 1, extra: 0 }],
@@ -443,6 +486,8 @@
             while (data.gallery.length > 4) data.gallery.pop();
             if (data.backgroundsDesc === undefined) data.backgroundsDesc = '';
             if (data.portrait === undefined) data.portrait = '';
+            if (data.trait === undefined) data.trait = '';
+            if (data.theme === undefined) data.theme = 'violet';
             return data;
         }
 
@@ -461,6 +506,8 @@
                     const cloudData = doc.data();
                     const merged = { ...DEFAULT_DATA, ...cloudData };
                     characterData = normalizeData(merged);
+                    // Aplicar tema guardado
+                    applyTheme(characterData.theme || 'violet');
                 } else {
                     characterData = JSON.parse(JSON.stringify(DEFAULT_DATA));
                     docRef.set(characterData).catch(err => console.warn('Error al crear documento:', err));
@@ -712,11 +759,15 @@
         }
 
         function syncEditableFields() {
+            // Actualizar campos contenteditable
+            document.getElementById('mainTitle').innerText = characterData.title || '📜 NUEVO PERSONAJE';
+            document.getElementById('subTitle').innerText = characterData.subtitle || 'EL AVENTURERO';
             document.getElementById('ageDisplay').innerText = characterData.age;
             document.getElementById('conceptDisplay').innerText = characterData.concept;
             document.getElementById('xpDisplay').innerText = characterData.xp + ' XP';
             document.getElementById('fullBackgroundText').textContent = characterData.background;
             document.getElementById('fullBackgroundsText').textContent = characterData.backgroundsDesc || '';
+            document.getElementById('fullTraitText').textContent = characterData.trait || '';
             document.getElementById('willpowerCurrent').value = characterData.willpower.current;
             document.getElementById('willpowerMax').value = characterData.willpower.max;
             document.getElementById('energyCurrent').value = characterData.energy.current;
@@ -746,6 +797,8 @@
         }
 
         function collectFromEditable() {
+            characterData.title = document.getElementById('mainTitle').innerText;
+            characterData.subtitle = document.getElementById('subTitle').innerText;
             characterData.age = document.getElementById('ageDisplay').innerText;
             characterData.concept = document.getElementById('conceptDisplay').innerText;
             characterData.xp = parseFloat(document.getElementById('xpDisplay').innerText.replace(',', '.')) || 0;
@@ -757,6 +810,8 @@
             if (bgText) characterData.background = bgText.innerText;
             const bgDesc = document.getElementById('fullBackgroundsText');
             if (bgDesc) characterData.backgroundsDesc = bgDesc.innerText;
+            const traitText = document.getElementById('fullTraitText');
+            if (traitText) characterData.trait = traitText.innerText;
         }
 
         // ========== TEMAS ==========
@@ -778,6 +833,10 @@
             Object.entries(theme).forEach(([key,val])=>{
                 document.documentElement.style.setProperty(key,val);
             });
+            // Guardar en el personaje si estamos logueados
+            if (currentCode) {
+                characterData.theme = themeName;
+            }
             localStorage.setItem('sheetTheme', themeName);
         }
 
@@ -793,7 +852,7 @@
             syncEditableFields();
         }
 
-        // ========== SISTEMA DE DESCANSO ==========
+        // ========== SISTEMA DE DESCANSO (sin cambios) ==========
         function getDamageCounts() {
             let contundente = 0, letal = 0, agravado = 0;
             characterData.health.forEach(h => {
@@ -1011,16 +1070,13 @@
             if (!newCode || newCode.trim() === '') { alert('Código inválido.'); return; }
             const trimmed = newCode.trim();
             if (trimmed === currentCode) { alert('El nuevo código es igual al actual.'); return; }
-            // Verificar que no exista
             const newDocRef = db.collection("characters").doc(trimmed);
             newDocRef.get().then((doc) => {
                 if (doc.exists) {
                     alert('Este código ya está en uso. Elige otro.');
                 } else {
-                    // Copiar datos al nuevo documento
                     collectFromEditable();
                     newDocRef.set(characterData).then(() => {
-                        // Borrar el antiguo
                         const oldDocRef = db.collection("characters").doc(currentCode);
                         oldDocRef.delete().then(() => {
                             alert('✅ Código cambiado exitosamente. Se cerrará sesión.');
@@ -1040,10 +1096,16 @@
             if (password !== currentCode) { alert('❌ Código incorrecto.'); return; }
             const docRef = getDocRef();
             if (!docRef) return;
-            docRef.delete().then(() => {
-                alert('🗑️ Personaje eliminado.');
-                logout();
-            }).catch(err => alert('Error al borrar: '+err));
+            // Limpiar imágenes grandes para liberar espacio (opcional)
+            docRef.update({
+                portrait: '',
+                gallery: ['','','','']
+            }).then(() => {
+                docRef.delete().then(() => {
+                    alert('🗑️ Personaje eliminado.');
+                    logout();
+                }).catch(err => alert('Error al borrar: '+err));
+            }).catch(err => alert('Error al limpiar imágenes: '+err));
         }
 
         // ========== LOGIN / LOGOUT ==========
@@ -1073,6 +1135,7 @@
             document.getElementById('loginCode').value = '';
             document.getElementById('loginError').textContent = '';
             characterData = JSON.parse(JSON.stringify(DEFAULT_DATA));
+            // No reseteamos el tema global
         }
 
         function createNew() {
@@ -1094,14 +1157,23 @@
 
         // ========== INICIALIZACIÓN ==========
         window.addEventListener('DOMContentLoaded', () => {
+            // Botones de tema
             document.querySelectorAll('.theme-btn').forEach(btn=>{
                 btn.addEventListener('click', ()=>{
-                    applyTheme(btn.dataset.theme);
+                    const theme = btn.dataset.theme;
+                    applyTheme(theme);
+                    // Guardar en el personaje si está logueado
+                    if (currentCode) {
+                        collectFromEditable();
+                        characterData.theme = theme;
+                        // No sincronizamos automáticamente, se guardará al sincronizar
+                    }
                 });
             });
             const savedTheme = localStorage.getItem('sheetTheme') || 'violet';
             applyTheme(savedTheme);
 
+            // Login
             document.getElementById('loginBtn').addEventListener('click', () => {
                 const code = document.getElementById('loginCode').value;
                 login(code);
@@ -1113,6 +1185,7 @@
             });
             document.getElementById('newCharBtn').addEventListener('click', createNew);
 
+            // Botones de la ficha
             document.getElementById('logoutBtn').addEventListener('click', logout);
             document.getElementById('changeCodeBtn').addEventListener('click', changeCode);
             document.getElementById('deleteCharBtn').addEventListener('click', deleteCharacter);
@@ -1121,7 +1194,11 @@
             document.getElementById('halfRestBtn').addEventListener('click', () => realizarDescanso('medio'));
             document.getElementById('exportBtn').addEventListener('click', exportCharacter);
             document.getElementById('copyStateBtn').addEventListener('click', copyState);
+            document.getElementById('diceBtn').addEventListener('click', () => {
+                window.open('https://carlosfotos.github.io/Cicatricesdelumbraldados/', '_blank');
+            });
 
+            // Añadir elementos
             document.getElementById('addResonanceBtn').addEventListener('click', () => {
                 characterData.resonances.push({ title: 'Nueva Resonancia', text: 'Describe aquí la resonancia...' });
                 renderResonances();
@@ -1136,18 +1213,53 @@
             });
             document.querySelectorAll('.add-skill-btn').forEach(btn => btn.addEventListener('click', () => addSkill(btn.dataset.type)));
 
-            // Modales
+            // Modales con guardado
+            // Historia
             document.getElementById('openBackgroundModalBtn').addEventListener('click', () => {
                 document.getElementById('fullBackgroundText').textContent = characterData.background;
                 document.getElementById('backgroundModal').style.display = 'block';
             });
+            document.getElementById('saveBackgroundModalBtn').addEventListener('click', () => {
+                const text = document.getElementById('fullBackgroundText').innerText;
+                characterData.background = text;
+                document.getElementById('backgroundModal').style.display = 'none';
+                renderAll();
+            });
+            document.getElementById('cancelBackgroundModalBtn').addEventListener('click', () => {
+                document.getElementById('backgroundModal').style.display = 'none';
+            });
+
+            // Trasfondos
             document.getElementById('openBackgroundsModalBtn').addEventListener('click', () => {
                 document.getElementById('fullBackgroundsText').textContent = characterData.backgroundsDesc || '';
                 document.getElementById('backgroundsModal').style.display = 'block';
             });
-            document.getElementById('openTraitModalBtn').addEventListener('click', () => document.getElementById('traitModal').style.display = 'block');
-            document.getElementById('openXpLogBtn').addEventListener('click', () => document.getElementById('xpLogModal').style.display = 'block');
+            document.getElementById('saveBackgroundsModalBtn').addEventListener('click', () => {
+                const text = document.getElementById('fullBackgroundsText').innerText;
+                characterData.backgroundsDesc = text;
+                document.getElementById('backgroundsModal').style.display = 'none';
+                renderAll();
+            });
+            document.getElementById('cancelBackgroundsModalBtn').addEventListener('click', () => {
+                document.getElementById('backgroundsModal').style.display = 'none';
+            });
 
+            // Rasgo
+            document.getElementById('openTraitModalBtn').addEventListener('click', () => {
+                document.getElementById('fullTraitText').textContent = characterData.trait || '';
+                document.getElementById('traitModal').style.display = 'block';
+            });
+            document.getElementById('saveTraitModalBtn').addEventListener('click', () => {
+                const text = document.getElementById('fullTraitText').innerText;
+                characterData.trait = text;
+                document.getElementById('traitModal').style.display = 'none';
+                renderAll();
+            });
+            document.getElementById('cancelTraitModalBtn').addEventListener('click', () => {
+                document.getElementById('traitModal').style.display = 'none';
+            });
+
+            // Cerrar con la X
             const closers = ['closeBackgroundModal','closeBackgroundsModal','closeTraitModal','closeXpLogModal','closeEncounterModal','closePortraitModal'];
             closers.forEach(id => {
                 document.getElementById(id).addEventListener('click', () => {
@@ -1157,6 +1269,8 @@
             });
             window.addEventListener('click', (e) => { if (e.target.classList.contains('modal')) e.target.style.display = 'none'; });
 
+            // XP Log
+            document.getElementById('openXpLogBtn').addEventListener('click', () => document.getElementById('xpLogModal').style.display = 'block');
             document.getElementById('addXpEntryBtn').addEventListener('click', () => {
                 const amount = parseFloat(document.getElementById('xpAmountInput').value.replace(',', '.')) || 1;
                 const reason = prompt('Motivo de la experiencia:');
@@ -1168,6 +1282,7 @@
                 }
             });
 
+            // Encuentros
             document.getElementById('saveEncounterBtn').addEventListener('click', () => {
                 const title = document.getElementById('encounterTitleInput').value;
                 const summary = document.getElementById('encounterSummaryInput').value;
@@ -1178,6 +1293,7 @@
                 document.getElementById('encounterModal').style.display = 'none';
             });
 
+            // Imagen de retrato
             const portraitUpload = document.getElementById('portraitUpload');
             portraitUpload.addEventListener('change', async (e) => {
                 const file = e.target.files[0];
@@ -1199,6 +1315,7 @@
                 }
             });
 
+            // Galería
             document.querySelectorAll('.galleryUpload').forEach(input => {
                 input.addEventListener('change', async function(e) {
                     const idx = parseInt(this.dataset.index);
