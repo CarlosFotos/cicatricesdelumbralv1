@@ -10,7 +10,6 @@
         * { box-sizing: border-box; margin: 0; font-family: 'Segoe UI', 'Candara', 'Palatino', system-ui, sans-serif; }
         body { background: #0c0b0e; background-image: radial-gradient(circle at 20% 30%, #1e1a24 0%, #040306 100%); padding: 15px 10px; display: flex; justify-content: center; color: #e4d9cd; min-height: 100vh; align-items: center; }
         .sheet { max-width: 1100px; width: 100%; background: rgba(20, 16, 26, 0.92); backdrop-filter: blur(4px); border: 1px solid #5e4b6e; box-shadow: 0 20px 40px rgba(0,0,0,0.7), 0 0 0 1px #3a2e44 inset; border-radius: 20px; padding: 18px 14px; }
-        /* Estilos del login */
         .login-container { max-width: 400px; margin: 0 auto; text-align: center; padding: 30px 20px; }
         .login-container h2 { color: #dac5e8; margin-bottom: 20px; border-left: none; padding-left: 0; }
         .login-container input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 30px; border: 1px solid #6a4e7a; background: #140f1c; color: #f2e7f9; font-size: 1rem; }
@@ -18,7 +17,6 @@
         .login-container .btn-secondary { background: #3a2e44; border-color: #6f5590; }
         .login-container .error { color: #ff6b6b; font-size: 0.9rem; margin-top: 8px; }
         .login-container .codigo-info { font-size: 0.8rem; color: #b09cc9; margin-top: 12px; }
-        /* resto de estilos (igual que antes) */
         h1 { font-family: 'Times New Roman', serif; font-weight: 400; letter-spacing: 2px; text-transform: uppercase; font-size: 1.8rem; color: #c9b6e0; text-shadow: 0 0 6px #7a4c9e; border-bottom: 2px solid #6a4e7a; padding-bottom: 6px; margin-bottom: 14px; display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
         h1 small { font-size: 0.9rem; letter-spacing: 1px; color: #b89bc9; }
         h2 { font-family: 'Times New Roman', serif; font-weight: 400; font-size: 1.3rem; border-left: 5px solid #9f7eb3; padding-left: 10px; margin: 20px 0 10px 0; color: #dac5e8; text-transform: uppercase; letter-spacing: 1px; }
@@ -119,6 +117,7 @@
         .health-row .box { width: 20px; height: 20px; font-size: 0.7rem; }
         .health-row .health-label { font-size: 0.85rem; color: #e4d9cd; }
         .hidden { display: none !important; }
+        .btn-danger { background: #6b2e2e; border-color: #b33; }
     </style>
 </head>
 <body>
@@ -136,11 +135,15 @@
         </div>
     </div>
 
-    <!-- FICHA DEL PERSONAJE (oculta hasta login) -->
+    <!-- FICHA DEL PERSONAJE -->
     <div id="sheetContainer" class="sheet hidden">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 8px;">
             <span style="color: #b8a4cc;">🔑 Código: <span id="currentCodeDisplay" style="font-weight:bold; color:#dac0f0;"></span></span>
-            <button class="btn btn-small" id="logoutBtn">🚪 Cerrar sesión</button>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <button class="btn btn-small" id="changeCodeBtn">🔁 Cambiar código</button>
+                <button class="btn btn-small btn-danger" id="deleteCharBtn">🗑️ Borrar personaje</button>
+                <button class="btn btn-small" id="logoutBtn">🚪 Cerrar sesión</button>
+            </div>
         </div>
 
         <div class="theme-selector">
@@ -295,11 +298,11 @@
             <button class="btn" id="exportBtn">📤 Exportar personaje</button>
             <button class="btn" id="copyStateBtn">📋 Copiar estado</button>
         </div>
-        <footer contenteditable="true">🩸 Cicatrices del Umbral · jugador CARLOS ANDRES MACHUCA NAVARRETE</footer>
+        <footer contenteditable="true">🩸 Cicatrices del Umbral · jugador inserte aca su nombre</footer>
     </div>
 </div>
 
-<!-- Modales (igual que antes) -->
+<!-- Modales -->
 <div id="backgroundModal" class="modal"><div class="modal-content"><div class="modal-header"><h2>La Herencia de Lilium Tun</h2><span class="close" id="closeBackgroundModal">&times;</span></div><div id="fullBackgroundText" contenteditable="true" style="white-space: pre-wrap;"></div></div></div>
 <div id="backgroundsModal" class="modal"><div class="modal-content"><div class="modal-header"><h2>Descripción de Trasfondos</h2><span class="close" id="closeBackgroundsModal">&times;</span></div><div id="fullBackgroundsText" contenteditable="true" style="white-space: pre-wrap;"></div></div></div>
 <div id="traitModal" class="modal"><div class="modal-content"><div class="modal-header"><h2 contenteditable="true">Rasgo: El Explorador</h2><span class="close" id="closeTraitModal">&times;</span></div><div contenteditable="true"><p><strong>Objetivo:</strong> experimentar la mayor cantidad de vida posible.</p><p><strong>Miedo:</strong> quedar atrapado.</p><p><strong>Debilidad:</strong> deambular sin rumbo.</p><p><strong>Talento:</strong> ser fiel a sus deseos y asombro.</p></div></div></div>
@@ -323,7 +326,6 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // ========== DATOS POR DEFECTO PARA NUEVO PERSONAJE ==========
         const DEFAULT_DATA = {
             age: '??', concept: 'Sin definir', xp: 0,
             background: 'Escribe aquí la historia de tu personaje...',
@@ -358,14 +360,12 @@
             gallery: ['','','','']
         };
 
-        // ========== VARIABLES GLOBALES ==========
         let characterData = JSON.parse(JSON.stringify(DEFAULT_DATA));
         let currentCode = '';
         let currentEncounterIndex = -1;
-        let syncPassword = ''; // se usará el código
         let unsubscribe = null;
 
-        // ========== FUNCIONES DE IMAGEN (redimensionado) ==========
+        // ========== FUNCIONES DE IMAGEN ==========
         function resizeImage(file, maxWidth = 300, quality = 0.7) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -446,13 +446,13 @@
             return data;
         }
 
-        // ========== REFERENCIA AL DOCUMENTO ==========
+        // ========== REFERENCIA ==========
         function getDocRef() {
             if (!currentCode) return null;
             return db.collection("characters").doc(currentCode);
         }
 
-        // ========== CARGAR DATOS DESDE FIRESTORE ==========
+        // ========== CARGAR DATOS ==========
         function loadCharacter(code) {
             if (unsubscribe) unsubscribe();
             const docRef = db.collection("characters").doc(code);
@@ -462,25 +462,21 @@
                     const merged = { ...DEFAULT_DATA, ...cloudData };
                     characterData = normalizeData(merged);
                 } else {
-                    // Si no existe, crear con datos por defecto
                     characterData = JSON.parse(JSON.stringify(DEFAULT_DATA));
                     docRef.set(characterData).catch(err => console.warn('Error al crear documento:', err));
                 }
                 renderAll();
             }, (error) => {
                 console.warn('Error en snapshot:', error);
-                // Si hay error, intentar cargar local
                 renderAll();
             });
             currentCode = code;
-            syncPassword = code;
             document.getElementById('currentCodeDisplay').textContent = code;
-            // Mostrar ficha y ocultar login
             document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('sheetContainer').classList.remove('hidden');
         }
 
-        // ========== FUNCIONES DE RENDERIZADO (igual que antes) ==========
+        // ========== RENDERIZADO ==========
         function renderSkills(containerId, skillsArray) {
             const container = document.getElementById(containerId);
             if (!container) return;
@@ -785,7 +781,6 @@
             localStorage.setItem('sheetTheme', themeName);
         }
 
-        // ========== RENDER ALL ==========
         function renderAll() {
             renderDots('attr-fisicos', characterData.attributes.fisicos);
             renderDots('attr-sociales', characterData.attributes.sociales);
@@ -974,7 +969,6 @@
         function copyState() {
             collectFromEditable();
             const nombre = document.getElementById('mainTitle').innerText;
-            // Salud: mostrar niveles marcados
             const saludStr = characterData.health
                 .filter(h => h.marked && h.marked.some(m => m))
                 .map(h => h.name)
@@ -1008,13 +1002,66 @@
             docRef.set(characterData).then(() => alert('✅ Datos sincronizados')).catch(err => alert('❌ Error: '+err));
         }
 
+        // ========== CAMBIAR CÓDIGO ==========
+        function changeCode() {
+            if (!currentCode) return;
+            const oldCode = prompt('🔐 Ingresa tu código actual para confirmar:', currentCode);
+            if (oldCode !== currentCode) { alert('❌ Código incorrecto.'); return; }
+            const newCode = prompt('✏️ Nuevo código para el personaje (alfanumérico, sin espacios):');
+            if (!newCode || newCode.trim() === '') { alert('Código inválido.'); return; }
+            const trimmed = newCode.trim();
+            if (trimmed === currentCode) { alert('El nuevo código es igual al actual.'); return; }
+            // Verificar que no exista
+            const newDocRef = db.collection("characters").doc(trimmed);
+            newDocRef.get().then((doc) => {
+                if (doc.exists) {
+                    alert('Este código ya está en uso. Elige otro.');
+                } else {
+                    // Copiar datos al nuevo documento
+                    collectFromEditable();
+                    newDocRef.set(characterData).then(() => {
+                        // Borrar el antiguo
+                        const oldDocRef = db.collection("characters").doc(currentCode);
+                        oldDocRef.delete().then(() => {
+                            alert('✅ Código cambiado exitosamente. Se cerrará sesión.');
+                            logout();
+                        }).catch(err => alert('Error al borrar antiguo: '+err));
+                    }).catch(err => alert('Error al crear nuevo documento: '+err));
+                }
+            }).catch(err => alert('Error al verificar: '+err));
+        }
+
+        // ========== BORRAR PERSONAJE ==========
+        function deleteCharacter() {
+            if (!currentCode) return;
+            const confirm1 = confirm('⚠️ ¿Estás seguro de que quieres BORRAR PERMANENTEMENTE este personaje? Esta acción no se puede deshacer.');
+            if (!confirm1) return;
+            const password = prompt('🔐 Ingresa el código del personaje para confirmar el borrado:');
+            if (password !== currentCode) { alert('❌ Código incorrecto.'); return; }
+            const docRef = getDocRef();
+            if (!docRef) return;
+            docRef.delete().then(() => {
+                alert('🗑️ Personaje eliminado.');
+                logout();
+            }).catch(err => alert('Error al borrar: '+err));
+        }
+
         // ========== LOGIN / LOGOUT ==========
         function login(code) {
             const trimmed = code.trim();
             if (!trimmed) { document.getElementById('loginError').textContent = 'Ingresa un código.'; return; }
-            // Verificar si existe en Firebase (opcional, pero lo creamos al cargar)
-            document.getElementById('loginError').textContent = '';
-            loadCharacter(trimmed);
+            document.getElementById('loginError').textContent = 'Verificando...';
+            const docRef = db.collection("characters").doc(trimmed);
+            docRef.get().then((doc) => {
+                if (doc.exists) {
+                    document.getElementById('loginError').textContent = '';
+                    loadCharacter(trimmed);
+                } else {
+                    document.getElementById('loginError').textContent = '❌ Código no encontrado. ¿Quieres crear uno nuevo?';
+                }
+            }).catch((err) => {
+                document.getElementById('loginError').textContent = 'Error de conexión: '+err.message;
+            });
         }
 
         function logout() {
@@ -1023,7 +1070,6 @@
             currentCode = '';
             document.getElementById('loginScreen').classList.remove('hidden');
             document.getElementById('sheetContainer').classList.add('hidden');
-            // Limpiar campos de login
             document.getElementById('loginCode').value = '';
             document.getElementById('loginError').textContent = '';
             characterData = JSON.parse(JSON.stringify(DEFAULT_DATA));
@@ -1034,13 +1080,11 @@
             if (!code) return;
             const trimmed = code.trim();
             if (!trimmed) { alert('Código inválido.'); return; }
-            // Verificar que no exista ya (opcional)
             const docRef = db.collection("characters").doc(trimmed);
             docRef.get().then((doc) => {
                 if (doc.exists) {
                     alert('Este código ya está en uso. Elige otro.');
                 } else {
-                    // Crear documento con datos por defecto
                     docRef.set(DEFAULT_DATA).then(() => {
                         login(trimmed);
                     }).catch(err => alert('Error al crear: '+err));
@@ -1050,7 +1094,6 @@
 
         // ========== INICIALIZACIÓN ==========
         window.addEventListener('DOMContentLoaded', () => {
-            // Temas
             document.querySelectorAll('.theme-btn').forEach(btn=>{
                 btn.addEventListener('click', ()=>{
                     applyTheme(btn.dataset.theme);
@@ -1059,7 +1102,6 @@
             const savedTheme = localStorage.getItem('sheetTheme') || 'violet';
             applyTheme(savedTheme);
 
-            // Eventos login
             document.getElementById('loginBtn').addEventListener('click', () => {
                 const code = document.getElementById('loginCode').value;
                 login(code);
@@ -1071,8 +1113,9 @@
             });
             document.getElementById('newCharBtn').addEventListener('click', createNew);
 
-            // Eventos de la ficha
             document.getElementById('logoutBtn').addEventListener('click', logout);
+            document.getElementById('changeCodeBtn').addEventListener('click', changeCode);
+            document.getElementById('deleteCharBtn').addEventListener('click', deleteCharacter);
             document.getElementById('syncToCloudBtn').addEventListener('click', syncToFirebase);
             document.getElementById('fullRestBtn').addEventListener('click', () => realizarDescanso('completo'));
             document.getElementById('halfRestBtn').addEventListener('click', () => realizarDescanso('medio'));
@@ -1108,7 +1151,8 @@
             const closers = ['closeBackgroundModal','closeBackgroundsModal','closeTraitModal','closeXpLogModal','closeEncounterModal','closePortraitModal'];
             closers.forEach(id => {
                 document.getElementById(id).addEventListener('click', () => {
-                    document.getElementById(id.replace('close','').replace('Modal','')+'Modal').style.display = 'none';
+                    const modalId = id.replace('close','') + 'Modal';
+                    document.getElementById(modalId).style.display = 'none';
                 });
             });
             window.addEventListener('click', (e) => { if (e.target.classList.contains('modal')) e.target.style.display = 'none'; });
@@ -1134,7 +1178,6 @@
                 document.getElementById('encounterModal').style.display = 'none';
             });
 
-            // Imagen de retrato
             const portraitUpload = document.getElementById('portraitUpload');
             portraitUpload.addEventListener('change', async (e) => {
                 const file = e.target.files[0];
@@ -1156,7 +1199,6 @@
                 }
             });
 
-            // Galería
             document.querySelectorAll('.galleryUpload').forEach(input => {
                 input.addEventListener('change', async function(e) {
                     const idx = parseInt(this.dataset.index);
@@ -1171,10 +1213,6 @@
                     }
                 });
             });
-
-            // Verificar si hay sesión guardada (para mantener login al recargar)
-            // No guardamos sesión para evitar que otro use el mismo navegador.
-            // Siempre mostramos login.
         });
     })();
 </script>
