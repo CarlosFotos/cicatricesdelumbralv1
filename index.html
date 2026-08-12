@@ -305,7 +305,7 @@
             <button class="btn" id="exportBtn">📤 Exportar personaje</button>
             <button class="btn" id="copyStateBtn">📋 Copiar estado</button>
         </div>
-        <footer contenteditable="true">🩸 Cicatrices del Umbral · jugador inserte aca su nombre</footer>
+        <footer contenteditable="true" id="footerText">🩸 Cicatrices del Umbral · jugador inserte aca su nombre</footer>
     </div>
 </div>
 
@@ -346,7 +346,7 @@
     </div>
 </div>
 
-<!-- Resto de modales (XP, Encuentros, Retrato) sin cambios -->
+<!-- Resto de modales (XP, Encuentros, Retrato) -->
 <div id="xpLogModal" class="modal"><div class="modal-content"><div class="modal-header"><h2 contenteditable="true">📋 Historial XP</h2><span class="close" id="closeXpLogModal">&times;</span></div><ul id="xpLogList" style="list-style:none;padding:0;"></ul><div style="display:flex;gap:8px;margin-top:16px;"><input type="number" step="0.1" id="xpAmountInput" min="0.1" value="1" style="width:90px;"><button class="btn" id="addXpEntryBtn">+ Añadir</button></div><p class="rule-note">Ingresa la cantidad de XP. Se pedirá el motivo.</p></div></div>
 <div id="encounterModal" class="modal"><div class="modal-content"><div class="modal-header"><h2 id="encounterModalTitle">Nuevo Encuentro</h2><span class="close" id="closeEncounterModal">&times;</span></div><input type="text" id="encounterTitleInput" placeholder="Título" style="margin-bottom:10px;"><textarea id="encounterSummaryInput" placeholder="Resumen..." rows="5"></textarea><button class="btn" id="saveEncounterBtn" style="margin-top:14px;">Guardar</button></div></div>
 <div id="portraitModal" class="modal portrait-modal"><div class="modal-content"><div class="modal-header"><h2>Retrato</h2><span class="close" id="closePortraitModal">&times;</span></div><img id="portraitModalImg" src="" alt="Retrato"></div></div>
@@ -368,10 +368,15 @@
         const db = firebase.firestore();
 
         const DEFAULT_DATA = {
-            age: '??', concept: 'Sin definir', xp: 0,
+            title: '📜 NUEVO PERSONAJE',
+            subtitle: 'EL AVENTURERO',
+            age: '??',
+            concept: 'Sin definir',
+            xp: 0,
             background: 'Escribe aquí la historia de tu personaje...',
             backgroundsDesc: 'Descripción de los trasfondos...',
             trait: '',
+            footer: '🩸 Cicatrices del Umbral · jugador inserte aca su nombre',
             theme: 'violet',
             attributes: {
                 fisicos: [{ name: 'Fuerza', base: 1, extra: 0 },{ name: 'Destreza', base: 1, extra: 0 },{ name: 'Resistencia', base: 1, extra: 0 }],
@@ -488,6 +493,9 @@
             if (data.portrait === undefined) data.portrait = '';
             if (data.trait === undefined) data.trait = '';
             if (data.theme === undefined) data.theme = 'violet';
+            if (data.title === undefined) data.title = DEFAULT_DATA.title;
+            if (data.subtitle === undefined) data.subtitle = DEFAULT_DATA.subtitle;
+            if (data.footer === undefined) data.footer = DEFAULT_DATA.footer;
             return data;
         }
 
@@ -506,7 +514,6 @@
                     const cloudData = doc.data();
                     const merged = { ...DEFAULT_DATA, ...cloudData };
                     characterData = normalizeData(merged);
-                    // Aplicar tema guardado
                     applyTheme(characterData.theme || 'violet');
                 } else {
                     characterData = JSON.parse(JSON.stringify(DEFAULT_DATA));
@@ -759,12 +766,12 @@
         }
 
         function syncEditableFields() {
-            // Actualizar campos contenteditable
-            document.getElementById('mainTitle').innerText = characterData.title || '📜 NUEVO PERSONAJE';
-            document.getElementById('subTitle').innerText = characterData.subtitle || 'EL AVENTURERO';
+            document.getElementById('mainTitle').innerText = characterData.title || DEFAULT_DATA.title;
+            document.getElementById('subTitle').innerText = characterData.subtitle || DEFAULT_DATA.subtitle;
             document.getElementById('ageDisplay').innerText = characterData.age;
             document.getElementById('conceptDisplay').innerText = characterData.concept;
             document.getElementById('xpDisplay').innerText = characterData.xp + ' XP';
+            document.getElementById('footerText').innerText = characterData.footer || DEFAULT_DATA.footer;
             document.getElementById('fullBackgroundText').textContent = characterData.background;
             document.getElementById('fullBackgroundsText').textContent = characterData.backgroundsDesc || '';
             document.getElementById('fullTraitText').textContent = characterData.trait || '';
@@ -773,7 +780,7 @@
             document.getElementById('energyCurrent').value = characterData.energy.current;
             document.getElementById('energyMax').value = characterData.energy.max;
             const portrait = document.getElementById('portraitPreview');
-            if (portrait && characterData.portrait) portrait.src = characterData.portrait;
+            if (portrait) portrait.src = characterData.portrait || '';
             renderGallery();
             const xpList = document.getElementById('xpLogList');
             if (xpList) {
@@ -801,17 +808,14 @@
             characterData.subtitle = document.getElementById('subTitle').innerText;
             characterData.age = document.getElementById('ageDisplay').innerText;
             characterData.concept = document.getElementById('conceptDisplay').innerText;
-            characterData.xp = parseFloat(document.getElementById('xpDisplay').innerText.replace(',', '.')) || 0;
+            const xpText = document.getElementById('xpDisplay').innerText;
+            characterData.xp = parseFloat(xpText.replace(',', '.')) || 0;
+            characterData.footer = document.getElementById('footerText').innerText;
             characterData.willpower.current = parseInt(document.getElementById('willpowerCurrent').value) || 0;
             characterData.willpower.max = parseInt(document.getElementById('willpowerMax').value) || 0;
             characterData.energy.current = parseInt(document.getElementById('energyCurrent').value) || 0;
             characterData.energy.max = parseInt(document.getElementById('energyMax').value) || 0;
-            const bgText = document.getElementById('fullBackgroundText');
-            if (bgText) characterData.background = bgText.innerText;
-            const bgDesc = document.getElementById('fullBackgroundsText');
-            if (bgDesc) characterData.backgroundsDesc = bgDesc.innerText;
-            const traitText = document.getElementById('fullTraitText');
-            if (traitText) characterData.trait = traitText.innerText;
+            // Los modales guardan sus propios campos directamente
         }
 
         // ========== TEMAS ==========
@@ -833,7 +837,6 @@
             Object.entries(theme).forEach(([key,val])=>{
                 document.documentElement.style.setProperty(key,val);
             });
-            // Guardar en el personaje si estamos logueados
             if (currentCode) {
                 characterData.theme = themeName;
             }
@@ -852,7 +855,7 @@
             syncEditableFields();
         }
 
-        // ========== SISTEMA DE DESCANSO (sin cambios) ==========
+        // ========== DESCANSO ==========
         function getDamageCounts() {
             let contundente = 0, letal = 0, agravado = 0;
             characterData.health.forEach(h => {
@@ -1096,7 +1099,7 @@
             if (password !== currentCode) { alert('❌ Código incorrecto.'); return; }
             const docRef = getDocRef();
             if (!docRef) return;
-            // Limpiar imágenes grandes para liberar espacio (opcional)
+            // Limpiar imágenes grandes y luego borrar el documento
             docRef.update({
                 portrait: '',
                 gallery: ['','','','']
@@ -1135,7 +1138,6 @@
             document.getElementById('loginCode').value = '';
             document.getElementById('loginError').textContent = '';
             characterData = JSON.parse(JSON.stringify(DEFAULT_DATA));
-            // No reseteamos el tema global
         }
 
         function createNew() {
@@ -1157,16 +1159,14 @@
 
         // ========== INICIALIZACIÓN ==========
         window.addEventListener('DOMContentLoaded', () => {
-            // Botones de tema
+            // Temas
             document.querySelectorAll('.theme-btn').forEach(btn=>{
                 btn.addEventListener('click', ()=>{
                     const theme = btn.dataset.theme;
                     applyTheme(theme);
-                    // Guardar en el personaje si está logueado
                     if (currentCode) {
                         collectFromEditable();
                         characterData.theme = theme;
-                        // No sincronizamos automáticamente, se guardará al sincronizar
                     }
                 });
             });
@@ -1220,8 +1220,7 @@
                 document.getElementById('backgroundModal').style.display = 'block';
             });
             document.getElementById('saveBackgroundModalBtn').addEventListener('click', () => {
-                const text = document.getElementById('fullBackgroundText').innerText;
-                characterData.background = text;
+                characterData.background = document.getElementById('fullBackgroundText').innerText;
                 document.getElementById('backgroundModal').style.display = 'none';
                 renderAll();
             });
@@ -1235,8 +1234,7 @@
                 document.getElementById('backgroundsModal').style.display = 'block';
             });
             document.getElementById('saveBackgroundsModalBtn').addEventListener('click', () => {
-                const text = document.getElementById('fullBackgroundsText').innerText;
-                characterData.backgroundsDesc = text;
+                characterData.backgroundsDesc = document.getElementById('fullBackgroundsText').innerText;
                 document.getElementById('backgroundsModal').style.display = 'none';
                 renderAll();
             });
@@ -1250,8 +1248,7 @@
                 document.getElementById('traitModal').style.display = 'block';
             });
             document.getElementById('saveTraitModalBtn').addEventListener('click', () => {
-                const text = document.getElementById('fullTraitText').innerText;
-                characterData.trait = text;
+                characterData.trait = document.getElementById('fullTraitText').innerText;
                 document.getElementById('traitModal').style.display = 'none';
                 renderAll();
             });
@@ -1259,13 +1256,17 @@
                 document.getElementById('traitModal').style.display = 'none';
             });
 
-            // Cerrar con la X
+            // Cerrar con la X (todos los modales)
             const closers = ['closeBackgroundModal','closeBackgroundsModal','closeTraitModal','closeXpLogModal','closeEncounterModal','closePortraitModal'];
             closers.forEach(id => {
-                document.getElementById(id).addEventListener('click', () => {
-                    const modalId = id.replace('close','') + 'Modal';
-                    document.getElementById(modalId).style.display = 'none';
-                });
+                const btn = document.getElementById(id);
+                if (btn) {
+                    btn.addEventListener('click', () => {
+                        const modalId = id.replace('close','') + 'Modal';
+                        const modal = document.getElementById(modalId);
+                        if (modal) modal.style.display = 'none';
+                    });
+                }
             });
             window.addEventListener('click', (e) => { if (e.target.classList.contains('modal')) e.target.style.display = 'none'; });
 
