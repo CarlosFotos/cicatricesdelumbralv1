@@ -508,22 +508,38 @@
         // ========== CARGAR DATOS ==========
         function loadCharacter(code) {
             if (unsubscribe) unsubscribe();
+
             const docRef = db.collection("characters").doc(code);
+
             unsubscribe = docRef.onSnapshot((doc) => {
-                if (doc.exists) {
-                    const cloudData = doc.data();
-                    const merged = { ...DEFAULT_DATA, ...cloudData };
-                    characterData = normalizeData(merged);
-                    applyTheme(characterData.theme || 'violet');
-                } else {
-                    characterData = JSON.parse(JSON.stringify(DEFAULT_DATA));
-                    docRef.set(characterData).catch(err => console.warn('Error al crear documento:', err));
+                // IMPORTANTE: si el documento fue borrado, NO volver a crearlo.
+                // La creación de personajes se hace exclusivamente desde createNew().
+                if (!doc.exists) {
+                    console.warn('El personaje ya no existe en Firestore.');
+                    if (unsubscribe) {
+                        unsubscribe();
+                        unsubscribe = null;
+                    }
+                    if (currentCode === code) {
+                        currentCode = '';
+                        document.getElementById('sheetContainer').classList.add('hidden');
+                        document.getElementById('loginScreen').classList.remove('hidden');
+                        document.getElementById('loginError').textContent =
+                            '❌ Este personaje fue eliminado y ya no existe.';
+                    }
+                    return;
                 }
+
+                const cloudData = doc.data();
+                const merged = { ...DEFAULT_DATA, ...cloudData };
+                characterData = normalizeData(merged);
+                applyTheme(characterData.theme || 'violet');
                 renderAll();
             }, (error) => {
                 console.warn('Error en snapshot:', error);
                 renderAll();
             });
+
             currentCode = code;
             document.getElementById('currentCodeDisplay').textContent = code;
             document.getElementById('loginScreen').classList.add('hidden');
@@ -1093,22 +1109,43 @@
         // ========== BORRAR PERSONAJE ==========
         function deleteCharacter() {
             if (!currentCode) return;
-            const confirm1 = confirm('⚠️ ¿Estás seguro de que quieres BORRAR PERMANENTEMENTE este personaje? Esta acción no se puede deshacer.');
+
+            const confirm1 = confirm(
+                '⚠️ ¿Estás seguro de que quieres BORRAR PERMANENTEMENTE este personaje? Esta acción no se puede deshacer.'
+            );
             if (!confirm1) return;
-            const password = prompt('🔐 Ingresa el código del personaje para confirmar el borrado:');
-            if (password !== currentCode) { alert('❌ Código incorrecto.'); return; }
-            const docRef = getDocRef();
-            if (!docRef) return;
-            // Limpiar imágenes grandes y luego borrar el documento
-            docRef.update({
-                portrait: '',
-                gallery: ['','','','']
-            }).then(() => {
-                docRef.delete().then(() => {
-                    alert('🗑️ Personaje eliminado.');
-                    logout();
-                }).catch(err => alert('Error al borrar: '+err));
-            }).catch(err => alert('Error al limpiar imágenes: '+err));
+
+            const password = prompt(
+                '🔐 Ingresa el código del personaje para confirmar el borrado:'
+            );
+            if (password !== currentCode) {
+                alert('❌ Código incorrecto.');
+                return;
+            }
+
+            const codeToDelete = currentCode;
+            const docRef = db.collection("characters").doc(codeToDelete);
+
+            // Desconectamos primero el listener onSnapshot para impedir
+            // que vuelva a crear el documento al detectar el borrado.
+            if (unsubscribe) {
+                unsubscribe();
+                unsubscribe = null;
+            }
+
+            docRef.delete().then(() => {
+                currentCode = '';
+                characterData = JSON.parse(JSON.stringify(DEFAULT_DATA));
+
+                document.getElementById('sheetContainer').classList.add('hidden');
+                document.getElementById('loginScreen').classList.remove('hidden');
+                document.getElementById('loginCode').value = '';
+                document.getElementById('loginError').textContent = '';
+
+                alert('🗑️ Personaje eliminado permanentemente.');
+            }).catch(err => {
+                alert('❌ Error al borrar el personaje: ' + err.message);
+            });
         }
 
         // ========== LOGIN / LOGOUT ==========
